@@ -4,7 +4,6 @@ using Anthropic;
 
 namespace UnrealAgent.Backend.Auth;
 
-
 /// <summary>
 /// API KEY 기반 인증 시스템
 /// AuthConfig.Json 파일에서 키를 로드하고, AnthropicClient 를 생성

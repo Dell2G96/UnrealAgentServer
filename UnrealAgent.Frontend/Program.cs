@@ -31,15 +31,41 @@
 
 #endregion
 
+using System.Diagnostics;
+using Anthropic.Models.Messages;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using UnrealAgent.Backend.Auth;
+using UnrealAgent.Backend.Conversation;
+using UnrealAgent.Backend.Core;
 using UnrealAgent.Backend.Llm;
+using Block = UnrealAgent.Backend.Core.Block;
+
+//using MessageCreateParams = Anthropic.Models.Beta.Messages.MessageCreateParams;
 
 ServiceCollection Services = new ServiceCollection();
 Services.AddSingleton<AuthConfig>();
 Services.AddSingleton<OpenAiApiConfig>();
 
-ServiceProvider Provider = Services.BuildServiceProvider(); 
+ServiceProvider Provider = Services.BuildServiceProvider();
+AuthConfig Auth = Provider.GetRequiredService<AuthConfig>();
+
+Auth.Load();
+
+if (!Auth.IsApiKeyConfigured())
+{
+    Console.Write("API Key를 입력하세요 : ");
+    string? Key = Console.ReadLine();
+
+    if (string.IsNullOrWhiteSpace(Key))
+    {
+        Console.WriteLine("API Key 가 입력되지 않았습니다");
+        return;
+    }
+    
+    Auth.SetApiKey(Key);
+    Console.WriteLine("Api Key 저장 완료 !");
+}
 
 Console.WriteLine("사용할 LLM 공급자를 선택하세요.");
 Console.WriteLine("1. Claude");
@@ -55,6 +81,7 @@ LlmProvider ProviderType = SelectedProvider?.Trim() switch
 
 ILlmClient LlmClient;
 
+
 if (ProviderType == LlmProvider.OpenAI)
 {
     OpenAiApiConfig OpenAiConfig = Provider.GetRequiredService<OpenAiApiConfig>();
@@ -63,7 +90,7 @@ if (ProviderType == LlmProvider.OpenAI)
     if (!OpenAiConfig.IsApiKeyConfigured())
     {
         Console.Write("OpenAI API Key를 입력하세요 : ");
-        string? Key = Console.ReadLine():;
+        string? Key = Console.ReadLine();
 
         if (string.IsNullOrWhiteSpace(Key))
         {
@@ -75,13 +102,11 @@ if (ProviderType == LlmProvider.OpenAI)
         Console.WriteLine("OpenAI API Key 저장 완료");
     }
 
-    string OpenAiModel = Environment.GetEnvironmentVariable("OPENAI_MODEL") ?? "gpt-5.1";
+    string OpenAiModel = Environment.GetEnvironmentVariable("OPENAI_MODEL") ?? "gpt-5.5";
     LlmClient = new OpenAiLlmClient(OpenAiConfig.ApiKey!, OpenAiModel);
 }
 else
 {
-    AuthConfig Auth = Provider.GetRequiredService<AuthConfig>();
-    Auth.Load();
 
     if (!Auth.IsApiKeyConfigured())
     {
@@ -102,20 +127,117 @@ else
     LlmClient = new AnthropicLlmClient(Auth.Client!, ClaudeModel);
 }
 
-Console.Write("프롬프트를 입력하세요 : ");
-string? Prompt = Console.ReadLine();
-if (string.IsNullOrWhiteSpace(Prompt))
+while (true)
 {
-    Prompt = "안녕하세요 ! 간단히 자기 소개해주세요";
+    #region 기존
+    /*
+     *Console.Write("프롬프트를 입력하세요 : ");
+    string? Prompt = Console.ReadLine();
+    if (string.IsNullOrWhiteSpace(Prompt))
+    {
+        Prompt = "안녕하세요 ! 간단히 자기 소개해주세요";
+    }
+
+    try
+    {
+        if (ProviderType == LlmProvider.Claude)
+        {
+            await foreach (string Chunk in LlmClient.GenerateStreamingAsync(Prompt))
+            {
+                Console.Write(Chunk);
+            }
+
+            Console.WriteLine();
+        }
+        else
+        {
+            string Response = await LlmClient.GenerateAsync(Prompt);
+            Console.WriteLine(Response);
+        }
+    }
+    catch (Exception Ex)
+    {
+        Console.WriteLine($"{ProviderType} 호출 실패");
+        Console.WriteLine(Ex.ToString());
+    }
+     * 
+     */
+    
+
+    #endregion
+    
+    Console.Write("\n> ");
+    string? Input = Console.ReadLine();
+
+    if (string.IsNullOrWhiteSpace(Input))
+        continue;
+
+    if (Input.Equals("exit", StringComparison.OrdinalIgnoreCase))
+        break;
+
+    if (ProviderType == LlmProvider.Claude)
+    {
+        await foreach (string Chunk in LlmClient.GenerateStreamingAsync(Input))
+        {
+            Console.Write(Chunk);
+        }
+
+        Console.WriteLine();
+    }
+    else
+    {
+        string Response = await LlmClient.GenerateAsync(Input);
+        Console.WriteLine(Response);
+    }
+
+    #region "기존 코드 Claude SDK 사용"
+    /*
+    MessageCreateParams Parameters = new MessageCreateParams
+    {
+        Model = "claude-opus-4-7",
+        MaxTokens = 1024,
+        Messages = [new() { Role = Role.User, Content = Input }],
+        Thinking = new ThinkingConfigAdaptive(),
+        OutputConfig = new OutputConfig()
+        {
+            Effort = Effort.High
+        }
+    };
+
+    ApiSteamSpan Span = new ApiSteamSpan();
+
+    await foreach (RawMessageStreamEvent Event in Auth.Client!.Messages.CreateStreaming(Parameters))
+    {
+        switch (Span.Process(Event))
+        {
+            case ChatEvent.Thinking Think:
+                Console.Write(Think.Content);
+                break;
+
+            case ChatEvent.Text Txt:
+                Console.Write(Txt.Content);
+                break;
+        }
+    }
+
+    Console.WriteLine();
+
+    Console.WriteLine("\n--- 완료된 블록 ---");
+    foreach (Block B in Span.Blocks)
+    {
+        switch (B)
+        {
+            case Block.Thinking T:
+                Console.WriteLine($"Thinking : {T.Content} {T.Signature}");
+                break;
+
+            case Block.Text T:
+                Console.WriteLine($"Text : {T.Content}");
+                break;
+        }
+    }
+    Console.WriteLine(Span.FinalStopReason);
+    */
+    #endregion
 }
 
-try
-{
-    string Response = await LlmClient.GenerateAsync(Prompt);
-    Console.WriteLine(Response);
-}
-catch (Exception Ex)
-{
-    Console.WriteLine($"{ProviderType} 호출 실패");
-    Console.WriteLine(Ex.ToString());
-}

@@ -1,3 +1,6 @@
+#region 기존 방식
+
+
 // using System.Diagnostics;
 // using System.Net.Http.Json;
 // using System.Security.Cryptography;
@@ -210,3 +213,5 @@
 //         public int ExpiresIn { get; set; }
 //     
 // }
+
+#endregion

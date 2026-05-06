@@ -1,4 +1,5 @@
 using OpenAI.Chat;
+using System.Runtime.CompilerServices;
 
 namespace UnrealAgent.Backend.Llm;
 
@@ -24,5 +25,12 @@ public sealed class OpenAiLlmClient : ILlmClient
             return string.Empty;
 
         return string.Join(Environment.NewLine, completion.Content.Select(part => part.Text));
+    }
+
+    public async IAsyncEnumerable<string> GenerateStreamingAsync(
+        string prompt,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        yield return await GenerateAsync(prompt, cancellationToken);
     }
 }
