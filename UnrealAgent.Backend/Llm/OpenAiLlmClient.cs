@@ -1,5 +1,6 @@
 using OpenAI.Chat;
 using System.Runtime.CompilerServices;
+using UnrealAgent.Backend.Core;
 
 namespace UnrealAgent.Backend.Llm;
 
@@ -32,5 +33,12 @@ public sealed class OpenAiLlmClient : ILlmClient
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         yield return await GenerateAsync(prompt, cancellationToken);
+    }
+
+    public async IAsyncEnumerable<ChatEvent> GenerateEventsAsync(
+        string prompt,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        yield return new ChatEvent.Text(await GenerateAsync(prompt, cancellationToken));
     }
 }

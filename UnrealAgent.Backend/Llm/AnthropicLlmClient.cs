@@ -2,6 +2,8 @@ using Anthropic;
 using Anthropic.Models.Messages;
 using System.Runtime.CompilerServices;
 using System.Text;
+using UnrealAgent.Backend.Conversation;
+using UnrealAgent.Backend.Core;
 
 namespace UnrealAgent.Backend.Llm;
 
@@ -43,6 +45,24 @@ public sealed class AnthropicLlmClient : ILlmClient
             {
                 yield return text.Text;
             }
+        }
+    }
+
+    public async IAsyncEnumerable<ChatEvent> GenerateEventsAsync(
+        string prompt,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        MessageCreateParams parameters = CreateParameters(prompt);
+        ApiSteamSpan span = new();
+
+        await foreach (RawMessageStreamEvent streamEvent in Client.Messages
+                           .CreateStreaming(parameters, cancellationToken)
+                           .WithCancellation(cancellationToken))
+        {
+            ChatEvent? chatEvent = span.Process(streamEvent);
+
+            if (chatEvent is not null)
+                yield return chatEvent;
         }
     }
 

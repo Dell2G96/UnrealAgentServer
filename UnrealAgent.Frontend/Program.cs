@@ -177,9 +177,18 @@ while (true)
 
     if (ProviderType == LlmProvider.Claude)
     {
-        await foreach (string Chunk in LlmClient.GenerateStreamingAsync(Input))
+        await foreach (ChatEvent Event in LlmClient.GenerateEventsAsync(Input))
         {
-            Console.Write(Chunk);
+            switch (Event)
+            {
+                case ChatEvent.Thinking Think:
+                    Console.Write(Think.Content);
+                    break;
+
+                case ChatEvent.Text Txt:
+                    Console.Write(Txt.Content);
+                    break;
+            }
         }
 
         Console.WriteLine();
@@ -240,4 +249,3 @@ while (true)
     */
     #endregion
 }
-
