@@ -54,22 +54,27 @@ ServiceProvider Provider = Services.BuildServiceProvider();
 AuthConfig Auth = Provider.GetRequiredService<AuthConfig>();
 AgentSession AgentSession = Provider.GetRequiredService<AgentSession>();
 
-Auth.Load();
-
-if (!Auth.IsApiKeyConfigured())
-{
-    Console.Write("API Key를 입력하세요 : ");
-    string? Key = Console.ReadLine();
-
-    if (string.IsNullOrWhiteSpace(Key))
-    {
-        Console.WriteLine("API Key 가 입력되지 않았습니다");
-        return;
-    }
-    
-    Auth.SetApiKey(Key);
-    Console.WriteLine("Api Key 저장 완료 !");
-}
+/*
+ * 26.05.11 - 공급자 선택 전 Claude API Key를 먼저 요구하던 기존 코드 보존
+ * OpenAI 선택 시에도 Claude Key를 요구하게 되어 공급자별 분기 내부로 이동했습니다.
+ *
+ * Auth.Load();
+ *
+ * if (!Auth.IsApiKeyConfigured())
+ * {
+ *     Console.Write("API Key를 입력하세요 : ");
+ *     string? Key = Console.ReadLine();
+ *
+ *     if (string.IsNullOrWhiteSpace(Key))
+ *     {
+ *         Console.WriteLine("API Key 가 입력되지 않았습니다");
+ *         return;
+ *     }
+ *
+ *     Auth.SetApiKey(Key);
+ *     Console.WriteLine("Api Key 저장 완료 !");
+ * }
+ */
 
 Console.WriteLine("사용할 LLM 공급자를 선택하세요.");
 Console.WriteLine("1. Claude");
@@ -112,6 +117,7 @@ if (ProviderType == LlmProvider.OpenAI)
 // 클로드 사용
 else
 {
+    Auth.Load();
 
     if (!Auth.IsApiKeyConfigured())
     {
@@ -128,7 +134,8 @@ else
         Console.WriteLine("Claude API Key 저장 완료");
     }
 
-    string ClaudeModel = Environment.GetEnvironmentVariable("CLAUDE_MODEL") ?? "claude-opus-4-6";
+    // 26.05.11 - 기존 기본값 "claude-opus-4-6" 대신 현재 직접 호출 경로에서 쓰던 모델명을 기본값으로 맞춤
+    string ClaudeModel = Environment.GetEnvironmentVariable("CLAUDE_MODEL") ?? "claude-opus-4-7";
     LlmClient = new AnthropicLlmClient(Auth.Client!, ClaudeModel);
 }
 
@@ -182,7 +189,38 @@ while (true)
 
     // 대화 히스토리에 사용자 입력 추가
     MessageSpan CurrentMessageSpan = AgentSession.Conversation.AddMessageSpan(Input);
-    
+
+    try
+    {
+        AssistantSpan AssistantSpan = await LlmClient.GenerateAssistantSpanAsync(
+            AgentSession.Conversation,
+            Event =>
+            {
+                switch (Event)
+                {
+                    case ChatEvent.Thinking Think:
+                        Console.Write(Think.Content);
+                        break;
+
+                    case ChatEvent.Text Txt:
+                        Console.Write(Txt.Content);
+                        break;
+                }
+
+                return Task.CompletedTask;
+            });
+
+        CurrentMessageSpan.AssistantSpans.Add(AssistantSpan);
+        Console.WriteLine();
+    }
+    catch (Exception Ex)
+    {
+        Console.WriteLine($"{ProviderType} 호출 실패");
+        Console.WriteLine(Ex.ToString());
+    }
+
+    #region "26.05.11 이전 provider별 직접 호출 코드 보존"
+    /*
     // API 요청 파라미터 구현
     MessageCreateParams Parameters = new MessageCreateParams
     {
@@ -199,6 +237,7 @@ while (true)
     ApiStreamSpan ApiStreamSpan = new ApiStreamSpan();
     if (ProviderType == LlmProvider.Claude)
     {
+        // 26.05.11 - ILlmClient 이벤트 호출 실험 코드 보존
         // await foreach (ChatEvent Event in LlmClient.GenerateEventsAsync(Input))
         // {
         //     switch (Event)
@@ -235,7 +274,6 @@ while (true)
             }
         }
 
-
         Console.WriteLine();
     }
     else
@@ -243,6 +281,8 @@ while (true)
         string Response = await LlmClient.GenerateAsync(Input);
         Console.WriteLine(Response);
     }
+    */
+    #endregion
 
     #region "기존 코드 Claude SDK 사용"
     /*

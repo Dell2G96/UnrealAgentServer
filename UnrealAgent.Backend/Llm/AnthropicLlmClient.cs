@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using UnrealAgent.Backend.Conversation;
 using UnrealAgent.Backend.Core;
+using ConversationModel = UnrealAgent.Backend.Conversation.Conversation;
 
 namespace UnrealAgent.Backend.Llm;
 
@@ -66,6 +67,32 @@ public sealed class AnthropicLlmClient : ILlmClient
         }
     }
 
+    public async Task<AssistantSpan> GenerateAssistantSpanAsync(
+        ConversationModel conversation,
+        Func<ChatEvent, Task>? onEvent = null,
+        CancellationToken cancellationToken = default)
+    {
+        MessageCreateParams parameters = CreateParameters(conversation);
+        ApiStreamSpan span = new();
+
+        await foreach (RawMessageStreamEvent streamEvent in Client.Messages
+                           .CreateStreaming(parameters, cancellationToken)
+                           .WithCancellation(cancellationToken))
+        {
+            ChatEvent? chatEvent = span.Process(streamEvent);
+
+            if (chatEvent is not null && onEvent is not null)
+                await onEvent(chatEvent);
+        }
+
+        return span.Complete() switch
+        {
+            ApiStreamSpan.Result.Continue { CompletedSpan: AssistantSpan completedSpan } => completedSpan,
+            ApiStreamSpan.Result.EndSpan { CompleteSpan: AssistantSpan completeSpan } => completeSpan,
+            _ => new AssistantSpan { AssistantBlocks = [] }
+        };
+    }
+
     private MessageCreateParams CreateParameters(string prompt)
     {
         return new MessageCreateParams
@@ -76,6 +103,21 @@ public sealed class AnthropicLlmClient : ILlmClient
             [
                 new() { Role = Role.User, Content = prompt }
             ],
+            Thinking = new ThinkingConfigAdaptive(),
+            OutputConfig = new OutputConfig
+            {
+                Effort = Effort.High
+            }
+        };
+    }
+
+    private MessageCreateParams CreateParameters(ConversationModel conversation)
+    {
+        return new MessageCreateParams
+        {
+            Model = Model,
+            MaxTokens = 1024,
+            Messages = conversation.ToAnthropicMessages(),
             Thinking = new ThinkingConfigAdaptive(),
             OutputConfig = new OutputConfig
             {

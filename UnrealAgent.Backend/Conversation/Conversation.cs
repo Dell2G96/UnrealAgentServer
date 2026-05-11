@@ -13,6 +13,9 @@ public sealed class Conversation
     // 메세지 구간(사용자 1턴) 목록
     private readonly List<MessageSpan> MessageSpans = [];
 
+    // 26.05.11 - Claude/OpenAI 양쪽에서 동일한 대화 히스토리를 변환할 수 있도록 읽기 전용 노출
+    public IReadOnlyList<MessageSpan> Spans => MessageSpans;
+
     // 첫번쨰 사용자 메세지 텍스트를 반환한다.
     // 빌링 헤더 생성에 사용됨
     public string GetFirstUserText() => MessageSpans.FirstOrDefault()?.UserInput?.Text ?? "";
