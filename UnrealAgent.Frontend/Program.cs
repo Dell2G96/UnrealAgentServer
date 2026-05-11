@@ -35,9 +35,11 @@ using System.Diagnostics;
 using Anthropic.Models.Messages;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
+using UnrealAgent.Backend.Agent;
 using UnrealAgent.Backend.Auth;
 using UnrealAgent.Backend.Conversation;
 using UnrealAgent.Backend.Core;
+
 using UnrealAgent.Backend.Llm;
 using Block = UnrealAgent.Backend.Core.Block;
 
@@ -46,9 +48,11 @@ using Block = UnrealAgent.Backend.Core.Block;
 ServiceCollection Services = new ServiceCollection();
 Services.AddSingleton<AuthConfig>();
 Services.AddSingleton<OpenAiApiConfig>();
+Services.AddSingleton<AgentSession>();
 
 ServiceProvider Provider = Services.BuildServiceProvider();
 AuthConfig Auth = Provider.GetRequiredService<AuthConfig>();
+AgentSession AgentSession = Provider.GetRequiredService<AgentSession>();
 
 Auth.Load();
 
@@ -105,6 +109,7 @@ if (ProviderType == LlmProvider.OpenAI)
     string OpenAiModel = Environment.GetEnvironmentVariable("OPENAI_MODEL") ?? "gpt-5.5";
     LlmClient = new OpenAiLlmClient(OpenAiConfig.ApiKey!, OpenAiModel);
 }
+// 클로드 사용
 else
 {
 
@@ -175,21 +180,61 @@ while (true)
     if (Input.Equals("exit", StringComparison.OrdinalIgnoreCase))
         break;
 
+    // 대화 히스토리에 사용자 입력 추가
+    MessageSpan CurrentMessageSpan = AgentSession.Conversation.AddMessageSpan(Input);
+    
+    // API 요청 파라미터 구현
+    MessageCreateParams Parameters = new MessageCreateParams
+    {
+        Model = "claude-opus-4-7",
+        MaxTokens = 1024,
+        Messages = AgentSession.Conversation.ToAnthropicMessages(),
+        Thinking = new ThinkingConfigAdaptive(),
+        OutputConfig = new OutputConfig()
+        {
+            Effort = Effort.High
+        },
+    };
+
+    ApiStreamSpan ApiStreamSpan = new ApiStreamSpan();
     if (ProviderType == LlmProvider.Claude)
     {
-        await foreach (ChatEvent Event in LlmClient.GenerateEventsAsync(Input))
+        // await foreach (ChatEvent Event in LlmClient.GenerateEventsAsync(Input))
+        // {
+        //     switch (Event)
+        //     {
+        //         case ChatEvent.Thinking Think:
+        //             Console.Write(Think.Content);
+        //             break;
+        //
+        //         case ChatEvent.Text Txt:
+        //             Console.Write(Txt.Content);
+        //             break;
+        //     }
+        // }
+
+        await foreach (RawMessageStreamEvent Event in Auth.Client!.Messages.CreateStreaming(Parameters))
         {
-            switch (Event)
+            switch (ApiStreamSpan.Process(Event))
             {
-                case ChatEvent.Thinking Think:
+                case ChatEvent.Thinking Think :
                     Console.Write(Think.Content);
                     break;
-
-                case ChatEvent.Text Txt:
+                case ChatEvent.Text Txt :
                     Console.Write(Txt.Content);
                     break;
             }
         }
+
+        switch (ApiStreamSpan.Complete())
+        {
+            case ApiStreamSpan.Result.EndSpan { CompleteSpan: { } AssistantSpan }:
+            {
+                CurrentMessageSpan.AssistantSpans.Add(AssistantSpan);
+                break;
+            }
+        }
+
 
         Console.WriteLine();
     }

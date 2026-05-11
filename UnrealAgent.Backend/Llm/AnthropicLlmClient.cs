@@ -53,7 +53,7 @@ public sealed class AnthropicLlmClient : ILlmClient
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         MessageCreateParams parameters = CreateParameters(prompt);
-        ApiSteamSpan span = new();
+        ApiStreamSpan span = new();
 
         await foreach (RawMessageStreamEvent streamEvent in Client.Messages
                            .CreateStreaming(parameters, cancellationToken)
