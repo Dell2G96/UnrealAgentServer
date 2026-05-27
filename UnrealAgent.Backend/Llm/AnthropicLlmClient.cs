@@ -97,6 +97,7 @@ public sealed class AnthropicLlmClient : ILlmClient
     {
         return new MessageCreateParams
         {
+            System = "너는 언리얼에 특화되어 있는 에이전트야",
             Model = Model,
             MaxTokens = 1024,
             Messages =

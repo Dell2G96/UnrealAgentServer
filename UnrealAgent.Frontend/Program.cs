@@ -41,6 +41,7 @@ using UnrealAgent.Backend.Conversation;
 using UnrealAgent.Backend.Core;
 
 using UnrealAgent.Backend.Llm;
+using UnrealAgent.Backend.Prompt;
 using Block = UnrealAgent.Backend.Core.Block;
 
 //using MessageCreateParams = Anthropic.Models.Beta.Messages.MessageCreateParams;
@@ -48,11 +49,13 @@ using Block = UnrealAgent.Backend.Core.Block;
 ServiceCollection Services = new ServiceCollection();
 Services.AddSingleton<AuthConfig>();
 Services.AddSingleton<OpenAiApiConfig>();
-Services.AddSingleton<AgentSession>();
+Services.AddSingleton<AgentSession>(); 
+Services.AddSingleton<PromptBuilder>(); 
 
 ServiceProvider Provider = Services.BuildServiceProvider();
 AuthConfig Auth = Provider.GetRequiredService<AuthConfig>();
 AgentSession AgentSession = Provider.GetRequiredService<AgentSession>();
+var PromptBuilder = Provider.GetRequiredService<PromptBuilder>();
 
 /*
  * 26.05.11 - 공급자 선택 전 Claude API Key를 먼저 요구하던 기존 코드 보존
@@ -284,53 +287,4 @@ while (true)
     */
     #endregion
 
-    #region "기존 코드 Claude SDK 사용"
-    /*
-    MessageCreateParams Parameters = new MessageCreateParams
-    {
-        Model = "claude-opus-4-7",
-        MaxTokens = 1024,
-        Messages = [new() { Role = Role.User, Content = Input }],
-        Thinking = new ThinkingConfigAdaptive(),
-        OutputConfig = new OutputConfig()
-        {
-            Effort = Effort.High
-        }
-    };
-
-    ApiSteamSpan Span = new ApiSteamSpan();
-
-    await foreach (RawMessageStreamEvent Event in Auth.Client!.Messages.CreateStreaming(Parameters))
-    {
-        switch (Span.Process(Event))
-        {
-            case ChatEvent.Thinking Think:
-                Console.Write(Think.Content);
-                break;
-
-            case ChatEvent.Text Txt:
-                Console.Write(Txt.Content);
-                break;
-        }
-    }
-
-    Console.WriteLine();
-
-    Console.WriteLine("\n--- 완료된 블록 ---");
-    foreach (Block B in Span.Blocks)
-    {
-        switch (B)
-        {
-            case Block.Thinking T:
-                Console.WriteLine($"Thinking : {T.Content} {T.Signature}");
-                break;
-
-            case Block.Text T:
-                Console.WriteLine($"Text : {T.Content}");
-                break;
-        }
-    }
-    Console.WriteLine(Span.FinalStopReason);
-    */
-    #endregion
 }
