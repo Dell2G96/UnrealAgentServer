@@ -31,9 +31,7 @@
 
 #endregion
 
-using System.Diagnostics;
-using Anthropic.Models.Messages;
-using Microsoft.Extensions.AI;
+
 using Microsoft.Extensions.DependencyInjection;
 using UnrealAgent.Backend.Agent;
 using UnrealAgent.Backend.Auth;
@@ -42,20 +40,41 @@ using UnrealAgent.Backend.Core;
 
 using UnrealAgent.Backend.Llm;
 using UnrealAgent.Backend.Prompt;
-using Block = UnrealAgent.Backend.Core.Block;
+using UnrealAgent.Backend.Tool.Tools;
+
 
 //using MessageCreateParams = Anthropic.Models.Beta.Messages.MessageCreateParams;
 
-ServiceCollection Services = new ServiceCollection();
-Services.AddSingleton<AuthConfig>();
-Services.AddSingleton<OpenAiApiConfig>();
-Services.AddSingleton<AgentSession>(); 
-Services.AddSingleton<PromptBuilder>(); 
+// ServiceCollection Services = new ServiceCollection();
+var Services = new ServiceCollection();
 
-ServiceProvider Provider = Services.BuildServiceProvider();
-AuthConfig Auth = Provider.GetRequiredService<AuthConfig>();
-AgentSession AgentSession = Provider.GetRequiredService<AgentSession>();
+// ── Auth 모듈 ──
+Services.AddSingleton<AuthConfig>();
+
+// ── Codex 모듈 ──
+Services.AddSingleton<OpenAiApiConfig>();
+
+// ── Agent 모듈 (에이전트 루프 + 세션) ──
+Services.AddSingleton<AgentSession>();
+
+// ── Runtime ──
+Services.AddSingleton<PromptBuilder>();
+
+// ── Tool 모듈 ──
+Services.AddSingleton<ToolRegistry>();
+
+// ServiceProvider Provider = Services.BuildServiceProvider();
+// AuthConfig Auth = Provider.GetRequiredService<AuthConfig>();
+// AgentSession AgentSession = Provider.GetRequiredService<AgentSession>();
+// var PromptBuilder = Provider.GetRequiredService<PromptBuilder>();
+
+var Provider = Services.BuildServiceProvider();
+
+var Auth = Provider.GetRequiredService<AuthConfig>();
+var AgentSession = Provider.GetRequiredService<AgentSession>();
 var PromptBuilder = Provider.GetRequiredService<PromptBuilder>();
+var ToolRegistry = Provider.GetRequiredService<ToolRegistry>();
+ToolRegistry.DiscoveryTools(typeof(WebSearch).Assembly);
 
 /*
  * 26.05.11 - 공급자 선택 전 Claude API Key를 먼저 요구하던 기존 코드 보존
@@ -139,7 +158,7 @@ else
 
     // 26.05.11 - 기존 기본값 "claude-opus-4-6" 대신 현재 직접 호출 경로에서 쓰던 모델명을 기본값으로 맞춤
     string ClaudeModel = Environment.GetEnvironmentVariable("CLAUDE_MODEL") ?? "claude-opus-4-7";
-    LlmClient = new AnthropicLlmClient(Auth.Client!, ClaudeModel);
+    LlmClient = new AnthropicLlmClient(Auth.Client!, ClaudeModel, ToolRegistry);
 }
 
 while (true)

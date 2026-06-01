@@ -39,7 +39,7 @@ public abstract class AgentTool<TInput> : IAgentTool
     public Task<ToolResult> ExecuteAsync(string InputJson, AgentSession Session, CancellationToken Ct = default)
     {
         TInput Input = JsonSerializer.Deserialize<TInput>(InputJson) ?? throw new ArgumentException($"Failed to deserialize {typeof(TInput).Name}.");
-        return ExecuteAsync(InputJson, Session, Ct);
+        return ExecuteAsync(Input, Session, Ct);
     }
     
     // 타입 안전한 도구 실행 매서드

@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using UnrealAgent.Backend.Conversation;
 using UnrealAgent.Backend.Core;
+using UnrealAgent.Backend.Tool.Tools;
 using ConversationModel = UnrealAgent.Backend.Conversation.Conversation;
 
 namespace UnrealAgent.Backend.Llm;
@@ -12,11 +13,13 @@ public sealed class AnthropicLlmClient : ILlmClient
 {
     private readonly AnthropicClient Client;
     private readonly string Model;
+    private readonly ToolRegistry ToolRegistry;
 
-    public AnthropicLlmClient(AnthropicClient client, string model)
+    public AnthropicLlmClient(AnthropicClient client, string model, ToolRegistry toolRegistry)
     {
         Client = client;
         Model = model;
+        ToolRegistry = toolRegistry;
     }
 
     public async Task<string> GenerateAsync(string prompt, CancellationToken cancellationToken = default)
@@ -118,7 +121,19 @@ public sealed class AnthropicLlmClient : ILlmClient
         {
             Model = Model,
             MaxTokens = 1024,
+            System = new List<TextBlockParam>
+            {
+                new()
+                {
+                    Text = """
+                           You are UnrealAgent, an AI assistant that controls Unreal Editor.
+                           Use the available tools when you need current state, external data, or editor automation.
+                           Do not claim that no tools are available if tools are present in the request.
+                           """
+                }
+            },
             Messages = conversation.ToAnthropicMessages(),
+            Tools = ToolRegistry.GetAllSchemas().Select(schema => (ToolUnion)schema).ToList(),
             Thinking = new ThinkingConfigAdaptive(),
             OutputConfig = new OutputConfig
             {
