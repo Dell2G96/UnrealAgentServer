@@ -134,7 +134,7 @@ if (ProviderType == LlmProvider.OpenAI)
     }
 
     string OpenAiModel = Environment.GetEnvironmentVariable("OPENAI_MODEL") ?? "gpt-5.5";
-    LlmClient = new OpenAiLlmClient(OpenAiConfig.ApiKey!, OpenAiModel);
+    LlmClient = new OpenAiLlmClient(OpenAiConfig.ApiKey!, OpenAiModel, ToolRegistry, AgentSession);
 }
 // 클로드 사용
 else

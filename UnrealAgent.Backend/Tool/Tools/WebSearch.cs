@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 using Anthropic.Models.Messages;
 using UnrealAgent.Backend.Agent;
 using UnrealAgent.Backend.Auth;
+using UnrealAgent.Backend.Tool;
 
 namespace UnrealAgent.Backend.Tool.Tools;
 

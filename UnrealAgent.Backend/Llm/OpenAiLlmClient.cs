@@ -1,8 +1,11 @@
 using OpenAI.Chat;
 using System.Runtime.CompilerServices;
 using System.Text;
+using UnrealAgent.Backend.Agent;
 using UnrealAgent.Backend.Conversation;
 using UnrealAgent.Backend.Core;
+using UnrealAgent.Backend.Tool;
+using UnrealAgent.Backend.Tool.Tools;
 using Block = UnrealAgent.Backend.Core.Block;
 using ConversationModel = UnrealAgent.Backend.Conversation.Conversation;
 
@@ -10,11 +13,21 @@ namespace UnrealAgent.Backend.Llm;
 
 public sealed class OpenAiLlmClient : ILlmClient
 {
-    private readonly ChatClient Client;
+    private const int MaxToolSteps = 8;
 
-    public OpenAiLlmClient(string apiKey, string model)
+    private readonly ChatClient Client;
+    private readonly ToolRegistry ToolRegistry;
+    private readonly AgentSession AgentSession;
+
+    public OpenAiLlmClient(
+        string apiKey,
+        string model,
+        ToolRegistry toolRegistry,
+        AgentSession agentSession)
     {
         Client = new ChatClient(model, apiKey);
+        ToolRegistry = toolRegistry;
+        AgentSession = agentSession;
     }
 
     public async Task<string> GenerateAsync(string prompt, CancellationToken cancellationToken = default)
@@ -51,11 +64,6 @@ public sealed class OpenAiLlmClient : ILlmClient
                     yield return contentPart.Text;
             }
         }
-
-        /*
-         * 26.05.11 - 기존 단발 응답 기반 스트리밍 대체 코드 보존
-         * yield return await GenerateAsync(prompt, cancellationToken);
-         */
     }
 
     public async IAsyncEnumerable<ChatEvent> GenerateEventsAsync(
@@ -66,11 +74,6 @@ public sealed class OpenAiLlmClient : ILlmClient
         {
             yield return new ChatEvent.Text(chunk);
         }
-
-        /*
-         * 26.05.11 - 기존 단발 응답 이벤트 코드 보존
-         * yield return new ChatEvent.Text(await GenerateAsync(prompt, cancellationToken));
-         */
     }
 
     public async Task<AssistantSpan> GenerateAssistantSpanAsync(
@@ -79,33 +82,83 @@ public sealed class OpenAiLlmClient : ILlmClient
         CancellationToken cancellationToken = default)
     {
         List<ChatMessage> messages = ToOpenAiMessages(conversation);
-        StringBuilder response = new();
+        ChatCompletionOptions options = CreateOptions();
 
-        await foreach (StreamingChatCompletionUpdate update in Client
-                           .CompleteChatStreamingAsync(messages, cancellationToken: cancellationToken)
-                           .WithCancellation(cancellationToken))
+        for (int step = 0; step < MaxToolSteps; step++)
         {
-            foreach (ChatMessageContentPart contentPart in update.ContentUpdate)
+            ChatCompletion completion = await Client.CompleteChatAsync(
+                messages,
+                options,
+                cancellationToken);
+
+            if (completion.FinishReason == ChatFinishReason.ToolCalls)
             {
-                if (string.IsNullOrEmpty(contentPart.Text))
-                    continue;
+                messages.Add(new AssistantChatMessage(completion));
 
-                response.Append(contentPart.Text);
+                foreach (ChatToolCall toolCall in completion.ToolCalls)
+                {
+                    ToolResult result = await ExecuteOpenAiToolCallAsync(toolCall, cancellationToken);
+                    messages.Add(new ToolChatMessage(toolCall.Id, result.Content));
+                }
 
-                if (onEvent is not null)
-                    await onEvent(new ChatEvent.Text(contentPart.Text));
+                continue;
             }
+
+            string responseText = GetCompletionText(completion);
+
+            if (onEvent is not null && !string.IsNullOrWhiteSpace(responseText))
+                await onEvent(new ChatEvent.Text(responseText));
+
+            return new AssistantSpan
+            {
+                AssistantBlocks = string.IsNullOrWhiteSpace(responseText)
+                    ? []
+                    : [new Block.Text(responseText)]
+            };
         }
 
-        List<Block> assistantBlocks = [];
+        const string tooManyToolCalls = "도구 호출이 너무 많이 반복되어 중단했습니다.";
 
-        if (response.Length > 0)
-            assistantBlocks.Add(new Block.Text(response.ToString()));
+        if (onEvent is not null)
+            await onEvent(new ChatEvent.Text(tooManyToolCalls));
 
         return new AssistantSpan
         {
-            AssistantBlocks = assistantBlocks
+            AssistantBlocks = [new Block.Text(tooManyToolCalls)]
         };
+    }
+
+    private ChatCompletionOptions CreateOptions()
+    {
+        ChatCompletionOptions options = new()
+        {
+            AllowParallelToolCalls = false
+        };
+
+        foreach (ChatTool tool in ToolRegistry.GetAllOpenAiTools())
+            options.Tools.Add(tool);
+
+        return options;
+    }
+
+    private async Task<ToolResult> ExecuteOpenAiToolCallAsync(
+        ChatToolCall toolCall,
+        CancellationToken cancellationToken)
+    {
+        if (!ToolRegistry.TryGetTool(toolCall.FunctionName, out IAgentTool? tool) || tool is null)
+            return ToolResult.Error($"ERROR: Unknown tool: {toolCall.FunctionName}");
+
+        try
+        {
+            return await tool.ExecuteAsync(
+                toolCall.FunctionArguments.ToString(),
+                AgentSession,
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            return ToolResult.Error($"ERROR: Tool '{toolCall.FunctionName}' failed: {ex.Message}");
+        }
     }
 
     private static List<ChatMessage> ToOpenAiMessages(ConversationModel conversation)
@@ -140,5 +193,13 @@ public sealed class OpenAiLlmClient : ILlmClient
             .Where(content => !string.IsNullOrWhiteSpace(content));
 
         return string.Join(Environment.NewLine, textBlocks);
+    }
+
+    private static string GetCompletionText(ChatCompletion completion)
+    {
+        if (completion.Content.Count == 0)
+            return string.Empty;
+
+        return string.Join(Environment.NewLine, completion.Content.Select(part => part.Text));
     }
 }
