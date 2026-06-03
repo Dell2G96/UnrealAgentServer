@@ -223,6 +223,15 @@ while (true)
                         case ChatEvent.Text Txt:
                             Console.Write(Txt.Content);
                             break;
+
+                        // 26.06.03 - OpenAI 도구 호출도 Claude처럼 콘솔에 표시합니다.
+                        case ChatEvent.ToolStart Tool:
+                            Console.WriteLine($"\n-- {Tool.Name} : {Tool.Input} 도구 사용 --");
+                            break;
+
+                        // 26.06.03 - OpenAI 도구 실행 결과 수신 지점을 명시합니다.
+                        case ChatEvent.ToolEnd:
+                            break;
                     }
 
                     return Task.CompletedTask;

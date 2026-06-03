@@ -83,6 +83,7 @@ public sealed class OpenAiLlmClient : ILlmClient
     {
         List<ChatMessage> messages = ToOpenAiMessages(conversation);
         ChatCompletionOptions options = CreateOptions();
+        List<AssistantSpan.ToolExecution> toolExecutions = [];
 
         for (int step = 0; step < MaxToolSteps; step++)
         {
@@ -97,7 +98,23 @@ public sealed class OpenAiLlmClient : ILlmClient
 
                 foreach (ChatToolCall toolCall in completion.ToolCalls)
                 {
+                    string inputJson = toolCall.FunctionArguments.ToString();
+
+                    // 26.06.03 - OpenAI 도구 호출 시작을 콘솔/UI 이벤트로 전달합니다.
+                    if (onEvent is not null)
+                        await onEvent(new ChatEvent.ToolStart(toolCall.Id, toolCall.FunctionName, inputJson));
+
                     ToolResult result = await ExecuteOpenAiToolCallAsync(toolCall, cancellationToken);
+                    toolExecutions.Add(new AssistantSpan.ToolExecution(
+                        toolCall.Id,
+                        toolCall.FunctionName,
+                        result.Content,
+                        !result.bIsSuccess));
+
+                    // 26.06.03 - OpenAI 도구 실행 결과를 콘솔/UI 이벤트로 전달합니다.
+                    if (onEvent is not null)
+                        await onEvent(new ChatEvent.ToolEnd(toolCall.Id, toolCall.FunctionName, result.Content));
+
                     messages.Add(new ToolChatMessage(toolCall.Id, result.Content));
                 }
 
@@ -109,12 +126,16 @@ public sealed class OpenAiLlmClient : ILlmClient
             if (onEvent is not null && !string.IsNullOrWhiteSpace(responseText))
                 await onEvent(new ChatEvent.Text(responseText));
 
-            return new AssistantSpan
+            AssistantSpan assistantSpan = new()
             {
                 AssistantBlocks = string.IsNullOrWhiteSpace(responseText)
                     ? []
                     : [new Block.Text(responseText)]
             };
+
+            // 26.06.03 - OpenAI 도구 실행 기록을 AssistantSpan에 저장해 Claude 경로와 동일한 기록 형태를 유지합니다.
+            assistantSpan.ToolExecutions.AddRange(toolExecutions);
+            return assistantSpan;
         }
 
         const string tooManyToolCalls = "도구 호출이 너무 많이 반복되어 중단했습니다.";
@@ -122,10 +143,12 @@ public sealed class OpenAiLlmClient : ILlmClient
         if (onEvent is not null)
             await onEvent(new ChatEvent.Text(tooManyToolCalls));
 
-        return new AssistantSpan
+        AssistantSpan fallbackSpan = new()
         {
             AssistantBlocks = [new Block.Text(tooManyToolCalls)]
         };
+        fallbackSpan.ToolExecutions.AddRange(toolExecutions);
+        return fallbackSpan;
     }
 
     private ChatCompletionOptions CreateOptions()
