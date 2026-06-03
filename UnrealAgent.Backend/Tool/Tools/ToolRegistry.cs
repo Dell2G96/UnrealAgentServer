@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 using Anthropic.Models.Messages;
 using Microsoft.Extensions.DependencyInjection;
 using OpenAI.Chat;
+using UnrealAgent.Backend.Agent;
 
 namespace UnrealAgent.Backend.Tool.Tools;
 
@@ -13,16 +14,40 @@ using ClrType = System.Type;
 
 public sealed class ToolRegistry(IServiceProvider serviceProvider)
 {
+    
+    // 도구 인스턴스와 클로드 API 스키마를 묶어서 보관
     private sealed record ToolEntry(
         IAgentTool Tool,
         AnthropicTool AnthropicSchema,
         string OpenAiSchemaJson);
 
+    // 도구 이름 -> ToolEntry 매핑
     private readonly Dictionary<string, ToolEntry> Tools = new();
 
+    // 등록된 모든 스키마를 반환
     public IReadOnlyList<AnthropicTool> GetAllSchemas()
         => Tools.Values.Select(entry => entry.AnthropicSchema).ToList();
 
+    // 도구를 이름으로 실행
+    public async Task<ToolResult> ExecuteAsync(string Name, string InputJson, AgentSession Session,
+        CancellationToken Ct = default)
+    {
+        if (!Tools.TryGetValue(Name, out ToolEntry? Entry))
+        {
+            return ToolResult.Error($"UnKnown tool : {Name}");
+        }
+
+        try
+        {
+            return await Entry.Tool.ExecuteAsync(InputJson, Session, Ct);
+        }
+        catch (Exception Ex)
+        {
+            return ToolResult.Error(Ex.Message);
+
+        }
+    }
+    
     public IReadOnlyList<ChatTool> GetAllOpenAiTools()
         => Tools.Values
             .Select(entry => ChatTool.CreateFunctionTool(
@@ -43,6 +68,8 @@ public sealed class ToolRegistry(IServiceProvider serviceProvider)
         return false;
     }
 
+    // 지정된 어셈블리에서 [AgentTool] + IAgentTool 클래스를 스캔하여 등록
+    // 인스턴스는 DI로 한 번 생성되어 재사용된다
     public void DiscoveryTools(params Assembly[] assemblies)
     {
         foreach (Assembly assembly in assemblies)

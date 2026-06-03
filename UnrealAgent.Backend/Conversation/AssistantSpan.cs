@@ -10,4 +10,10 @@ public sealed record AssistantSpan
 {
     /// 어시스턴드 응답 블록 목록
     public required IReadOnlyList<Block> AssistantBlocks { get; init; }
+    
+    // 도구 실행 결과 레코드
+    public sealed record ToolExecution(string ToolUseId, string Name, string OutPut, bool bIsError);
+    
+    // 도구 실행 결과 목록 , 도구 호출이 없으면 비어 있다
+    public List<ToolExecution> ToolExecutions { get; } = [];
 }

@@ -31,22 +31,28 @@
 
 #endregion
 
-
+using Anthropic.Models.Messages;
 using Microsoft.Extensions.DependencyInjection;
 using UnrealAgent.Backend.Agent;
 using UnrealAgent.Backend.Auth;
 using UnrealAgent.Backend.Conversation;
 using UnrealAgent.Backend.Core;
 
-using UnrealAgent.Backend.Llm;
 using UnrealAgent.Backend.Prompt;
+using UnrealAgent.Backend.Tool;
 using UnrealAgent.Backend.Tool.Tools;
+
+using Block = UnrealAgent.Backend.Core.Block;
+using UnrealAgent.Backend.Llm;
 
 
 //using MessageCreateParams = Anthropic.Models.Beta.Messages.MessageCreateParams;
 
 // ServiceCollection Services = new ServiceCollection();
 var Services = new ServiceCollection();
+
+
+Services.AddHttpClient("OAuth", C => C.Timeout = TimeSpan.FromSeconds(30));
 
 // ── Auth 모듈 ──
 Services.AddSingleton<AuthConfig>();
@@ -62,6 +68,7 @@ Services.AddSingleton<PromptBuilder>();
 
 // ── Tool 모듈 ──
 Services.AddSingleton<ToolRegistry>();
+Services.AddSingleton<ToolExecutor>();
 
 // ServiceProvider Provider = Services.BuildServiceProvider();
 // AuthConfig Auth = Provider.GetRequiredService<AuthConfig>();
@@ -75,34 +82,20 @@ var AgentSession = Provider.GetRequiredService<AgentSession>();
 var PromptBuilder = Provider.GetRequiredService<PromptBuilder>();
 var ToolRegistry = Provider.GetRequiredService<ToolRegistry>();
 ToolRegistry.DiscoveryTools(typeof(WebSearch).Assembly);
+var ToolExecutor = Provider.GetRequiredService<ToolExecutor>();
 
-/*
- * 26.05.11 - 공급자 선택 전 Claude API Key를 먼저 요구하던 기존 코드 보존
- * OpenAI 선택 시에도 Claude Key를 요구하게 되어 공급자별 분기 내부로 이동했습니다.
- *
- * Auth.Load();
- *
- * if (!Auth.IsApiKeyConfigured())
- * {
- *     Console.Write("API Key를 입력하세요 : ");
- *     string? Key = Console.ReadLine();
- *
- *     if (string.IsNullOrWhiteSpace(Key))
- *     {
- *         Console.WriteLine("API Key 가 입력되지 않았습니다");
- *         return;
- *     }
- *
- *     Auth.SetApiKey(Key);
- *     Console.WriteLine("Api Key 저장 완료 !");
- * }
- */
 
+//
+ // ToolRegistry.DiscoveryTools(typeof(WebSearch).Assembly);
+
+
+// 로직 시작
 Console.WriteLine("사용할 LLM 공급자를 선택하세요.");
 Console.WriteLine("1. Claude");
 Console.WriteLine("2. OpenAI");
 Console.Write("선택: ");
 
+// 클로드 , Codex 선택
 string? SelectedProvider = Console.ReadLine();
 LlmProvider ProviderType = SelectedProvider?.Trim() switch
 {
@@ -113,6 +106,7 @@ LlmProvider ProviderType = SelectedProvider?.Trim() switch
 ILlmClient LlmClient;
 
 
+// 코덱스 선택 시 
 if (ProviderType == LlmProvider.OpenAI)
 {
     OpenAiApiConfig OpenAiConfig = Provider.GetRequiredService<OpenAiApiConfig>();
@@ -212,36 +206,136 @@ while (true)
     // 대화 히스토리에 사용자 입력 추가
     MessageSpan CurrentMessageSpan = AgentSession.Conversation.AddMessageSpan(Input);
 
-    try
+    if (ProviderType == LlmProvider.OpenAI)
     {
-        AssistantSpan AssistantSpan = await LlmClient.GenerateAssistantSpanAsync(
-            AgentSession.Conversation,
-            Event =>
-            {
-                switch (Event)
+        try
+        {
+            AssistantSpan AssistantSpan = await LlmClient.GenerateAssistantSpanAsync(
+                AgentSession.Conversation,
+                Event =>
                 {
-                    case ChatEvent.Thinking Think:
-                        Console.Write(Think.Content);
-                        break;
+                    switch (Event)
+                    {
+                        case ChatEvent.Thinking Think:
+                            Console.Write(Think.Content);
+                            break;
 
-                    case ChatEvent.Text Txt:
-                        Console.Write(Txt.Content);
-                        break;
+                        case ChatEvent.Text Txt:
+                            Console.Write(Txt.Content);
+                            break;
+                    }
+
+                    return Task.CompletedTask;
+                });
+
+            CurrentMessageSpan.AssistantSpans.Add(AssistantSpan);
+            Console.WriteLine();
+        }
+        catch (Exception Ex)
+        {
+            Console.WriteLine($"{ProviderType} 호출 실패");
+            Console.WriteLine(Ex.ToString());
+        }
+
+        continue;
+    }
+
+    #region 26.06.01 Tool 추가 코드
+
+    // try
+    // {
+    //     AssistantSpan AssistantSpan = await LlmClient.GenerateAssistantSpanAsync(
+    //         AgentSession.Conversation,
+    //         Event =>
+    //         {
+    //             switch (Event)
+    //             {
+    //                 case ChatEvent.Thinking Think:
+    //                     Console.Write(Think.Content);
+    //                     break;
+    //
+    //                 case ChatEvent.Text Txt:
+    //                     Console.Write(Txt.Content);
+    //                     break;
+    //             }
+    //
+    //             return Task.CompletedTask;
+    //         });
+    //
+    //     CurrentMessageSpan.AssistantSpans.Add(AssistantSpan);
+    //     Console.WriteLine();
+    // }
+    // catch (Exception Ex)
+    // {
+    //     Console.WriteLine($"{ProviderType} 호출 실패");
+    //     Console.WriteLine(Ex.ToString());
+    // }
+
+    #endregion
+
+    // 에이전트 루프 : 도구 실행이 필요하면 API를 반복 호출
+    bool bContinue = true;
+
+    while (bContinue)
+    {
+        // API 요청 파라미터
+        MessageCreateParams Parameters = PromptBuilder.Build(AgentSession);
+        
+        // 스트리밍 응답 수신 및 출력
+        ApiStreamSpan ApiStreamSpan = new ApiStreamSpan();
+        await foreach (RawMessageStreamEvent Event in Auth.Client!.Messages.CreateStreaming(Parameters))
+        {
+            switch(ApiStreamSpan.Process(Event))
+            {
+               case ChatEvent.Text Txt :
+                   Console.Write(Txt.Content);
+                   break;
+            }
+        }
+        
+        // 완료된 응답을 대화 히스토리에 저장
+        switch (ApiStreamSpan.Complete())
+        {
+            case ApiStreamSpan.Result.EndSpan { CompleteSpan: { } AssistantSpan }:
+            {
+                CurrentMessageSpan.AssistantSpans.Add(AssistantSpan);
+                bContinue = false;
+
+                break;
+            }
+
+            case ApiStreamSpan.Result.ExecuteTools { CompletedSpan: { } AssistantSpan, ToolCalls : { } ToolCalls }:
+            {
+                CurrentMessageSpan.AssistantSpans.Add(AssistantSpan);
+                
+                // 도구 실행
+                foreach (Block.ToolUse ToolCall in ToolCalls)
+                {
+                    await foreach (ChatEvent Evt in ToolExecutor.ExecuteAsync(ToolCall, AssistantSpan, AgentSession))
+                    {
+                        if (Evt is ChatEvent.ToolStart Tool)
+                            Console.WriteLine($"\n-- {Tool.Name} : {Tool.Input} 도구 사용 --");
+                    }
                 }
 
-                return Task.CompletedTask;
-            });
-
-        CurrentMessageSpan.AssistantSpans.Add(AssistantSpan);
-        Console.WriteLine();
+                // 도구 결과를 포함하여 다음 API 호출로 이어간다
+                break;
+            }
+            
+            // 서버에 문제가 있는 경우
+            case ApiStreamSpan.Result.Continue { CompletedSpan: { } AssistantSpan }:
+            {
+                CurrentMessageSpan.AssistantSpans.Add(AssistantSpan);
+                
+                // 잘린 응답을 이어서 생성
+                break;
+            }
+        }
     }
-    catch (Exception Ex)
-    {
-        Console.WriteLine($"{ProviderType} 호출 실패");
-        Console.WriteLine(Ex.ToString());
-    }
-
+    Console.WriteLine();
+    
     #region "26.05.11 이전 provider별 직접 호출 코드 보존"
+
     /*
     // API 요청 파라미터 구현
     MessageCreateParams Parameters = new MessageCreateParams
@@ -304,6 +398,7 @@ while (true)
         Console.WriteLine(Response);
     }
     */
+
     #endregion
 
 }

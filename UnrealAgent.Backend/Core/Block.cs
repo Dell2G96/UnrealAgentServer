@@ -9,4 +9,7 @@ public abstract record Block
 
     // 사고 과정 블록
     public sealed record Thinking(string Content, string? Signature) : Block;
+    
+    // 도구 호출 블록
+    public sealed record ToolUse(string Id, string Name, string InputJson) : Block;
 }

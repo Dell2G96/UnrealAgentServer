@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Anthropic.Models.Messages;
 using Block = UnrealAgent.Backend.Core.Block;
 
@@ -45,13 +46,19 @@ public sealed class Conversation
             // assistant 메시지
             foreach (AssistantSpan Span in MessageSpan.AssistantSpans)
             {
+                // Assistant 대답
                 Messages.Add(ConvertAssistantBlocks(Span.AssistantBlocks));
+                
+                // Assistant 도구 실행 결과
+                if(Span.ToolExecutions.Count > 0)
+                    Messages.Add(ConvertToolResults(Span.ToolExecutions));
             }
         }
 
         return Messages;
     }
 
+    
     /*
      * UserInput 을 안트로픽 API 메세지로 변환
      * 이미지가 없으면 텍스트, 있으면 이미지 + 텍스트 블록으로 구성
@@ -86,8 +93,29 @@ public sealed class Conversation
                     ContentBlocks.Add(new ThinkingBlockParam { Thinking = Content, Signature = Signature });
                     break;
                 }
+
+                case Core.Block.ToolUse { Id : { } Id, Name : { } Name, InputJson: { } InputJson }:
+                {
+                    Dictionary<string, JsonElement> ParsedInput = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(InputJson) ?? new Dictionary<string, JsonElement>();
+                    
+                    ContentBlocks.Add(new ToolUseBlockParam {ID = Id, Name = Name, Input = ParsedInput });
+                    break;
+                }
             }
         }
         return new MessageParam { Role = Role.Assistant, Content = ContentBlocks };
     }
+    // 도구 실행 결과를 안트로픽 API user 메세지(ToolResult) 로 변환
+    private MessageParam ConvertToolResults(List<AssistantSpan.ToolExecution> Executions)
+    {
+        List<ContentBlockParam> ResultBlocks = Executions.Select(E => (ContentBlockParam)new ToolResultBlockParam
+        {
+            ToolUseID = E.ToolUseId,
+            Content = E.OutPut,
+            IsError = E.bIsError ? true : null
+        }).ToList();
+
+        return new MessageParam { Role = Role.User, Content = ResultBlocks };
+    }
+
 }
