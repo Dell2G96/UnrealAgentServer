@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
@@ -9,6 +9,11 @@
 
     <ItemGroup>
       <ProjectReference Include="..\UnrealAgent.Backend\UnrealAgent.Backend.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Markdig" Version="1.2.0" />
+      <PackageReference Include="Microsoft.AspNetCore.App.Internal.Assets" Version="11.0.0-preview.4.26230.115" />
     </ItemGroup>
 
 </Project>
