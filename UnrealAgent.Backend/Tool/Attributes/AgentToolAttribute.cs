@@ -1,4 +1,4 @@
-namespace UnrealAgent.Backend.Tool.Tools;
+namespace UnrealAgent.Backend.Tool.Attributes;
 
 // ToolRegistry가 자동 스캔하는 도구 마커 어트리뷰트
 // Claude API에 전달할 도구 이름과 설명을 지정한다

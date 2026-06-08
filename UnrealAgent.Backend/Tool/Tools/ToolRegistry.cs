@@ -6,6 +6,7 @@ using Anthropic.Models.Messages;
 using Microsoft.Extensions.DependencyInjection;
 using OpenAI.Chat;
 using UnrealAgent.Backend.Agent;
+using UnrealAgent.Backend.Tool.Attributes;
 
 namespace UnrealAgent.Backend.Tool.Tools;
 

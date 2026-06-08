@@ -6,6 +6,7 @@ using Anthropic.Models.Messages;
 using UnrealAgent.Backend.Agent;
 using UnrealAgent.Backend.Auth;
 using UnrealAgent.Backend.Tool;
+using UnrealAgent.Backend.Tool.Attributes;
 
 namespace UnrealAgent.Backend.Tool.Tools;
 

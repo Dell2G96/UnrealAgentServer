@@ -37,7 +37,7 @@ public interface IAgentTool
 public abstract class AgentTool<TInput> : IAgentTool
 {
     // JSON 문자열을 TInput으로 역직렬화 하여 실행
-    public Task<ToolResult> ExecuteAsync(string InputJson, AgentSession Session, CancellationToken Ct = default)
+    public Task<ToolResult> ExecuteAsync(string InputJson, AgentSession Session, CancellationToken Ct = default) 
     {
         TInput Input = JsonSerializer.Deserialize<TInput>(InputJson) ?? throw new ArgumentException($"Failed to deserialize {typeof(TInput).Name}.");
         return ExecuteAsync(Input, Session, Ct);
