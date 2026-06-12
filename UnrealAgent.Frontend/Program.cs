@@ -419,6 +419,7 @@
 using UnrealAgent.Backend.Agent;
 using UnrealAgent.Backend.Auth;
 using UnrealAgent.Backend.Model;
+using UnrealAgent.Backend.Model.Models;
 using UnrealAgent.Backend.Prompt;
 using UnrealAgent.Backend.Tool;
 using UnrealAgent.Backend.Tool.Tools;
@@ -463,6 +464,8 @@ WebApplication App = Builder.Build();
 
 // ── 어트리뷰트 기반 자동 스캔 ──
 App.Services.GetRequiredService<ToolRegistry>().DiscoveryTools(typeof(WebSearch).Assembly);
+// 06.12 추가 (Model 설정)
+App.Services.GetRequiredService<ModelRegistry>().DiscoverModels(typeof(Opus48).Assembly);
 
 // ── Auth 설정 로드 ──
 App.Services.GetRequiredService<AuthConfig>().Load();

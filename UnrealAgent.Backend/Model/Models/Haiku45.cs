@@ -1,8 +1,9 @@
+using UnrealAgent.Backend.Tool.Attributes;
 
 namespace UnrealAgent.Backend.Model.Models;
 
-
 // Claude Haiku 4.5 모델
+[AgentModel(Order = 3)]
 public sealed class Haiku45 : IModel
 {
     public const string ModelId = "claude-haiku-4-5-20251001";

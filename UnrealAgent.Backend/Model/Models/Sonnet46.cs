@@ -1,5 +1,7 @@
-namespace UnrealAgent.Backend.Model.Models;
+using UnrealAgent.Backend.Tool.Attributes;
 
+namespace UnrealAgent.Backend.Model.Models;
+[AgentModel(Order = 2)]
 public sealed class Sonnet46 : IModel
 {
     public const string ModelId = "claude-sonnet-4-6";
