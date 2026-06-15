@@ -1,7 +1,7 @@
 namespace UnrealAgent.Backend.Llm;
 
 using UnrealAgent.Backend.Conversation;
-using UnrealAgent.Backend.Core;
+using UnrealAgent.Backend.Chat;
 using ConversationModel = UnrealAgent.Backend.Conversation.Conversation;
 
 public interface ILlmClient

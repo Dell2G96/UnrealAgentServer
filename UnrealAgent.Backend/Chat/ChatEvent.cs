@@ -1,10 +1,13 @@
-namespace UnrealAgent.Backend.Core;
+namespace UnrealAgent.Backend.Chat;
 
 // 에이전트에서 UI로 전달되는 스트리밍 이벤트
 public abstract record ChatEvent
 {
-    //
-    public sealed record Text(string Content) : ChatEvent;
+    // 사용자 메세지
+    public sealed record User(string Content) : ChatEvent;
+    
+    //클로드의 텍스트 응답
+    public sealed record Assistant(string Content) : ChatEvent;
     
     // Claude의 사고과정 응답
     public sealed record Thinking(string Content) : ChatEvent;
@@ -15,6 +18,9 @@ public abstract record ChatEvent
     // 도구 실행 결과
     public sealed record ToolEnd(string ToolUseId, string Name, string Result) : ChatEvent;
 
+    // 시스템 메세지 (커맨드 결과, 에러 등)
+    public sealed record System(string Content) : ChatEvent;
+    
     // 스트림 종료
     public sealed record Done : ChatEvent;
 }

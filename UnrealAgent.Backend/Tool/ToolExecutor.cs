@@ -5,6 +5,7 @@ using UnrealAgent.Backend.Agent;
 using UnrealAgent.Backend.Tool.Tools;
 using UnrealAgent.Backend.Conversation;
 using UnrealAgent.Backend.Core;
+using UnrealAgent.Backend.Chat;
 
 namespace UnrealAgent.Backend.Tool;
 

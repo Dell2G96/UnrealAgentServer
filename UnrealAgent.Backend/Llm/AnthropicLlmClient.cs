@@ -2,8 +2,8 @@ using Anthropic;
 using Anthropic.Models.Messages;
 using System.Runtime.CompilerServices;
 using System.Text;
+using UnrealAgent.Backend.Chat;
 using UnrealAgent.Backend.Conversation;
-using UnrealAgent.Backend.Core;
 using UnrealAgent.Backend.Tool.Tools;
 using ConversationModel = UnrealAgent.Backend.Conversation.Conversation;
 

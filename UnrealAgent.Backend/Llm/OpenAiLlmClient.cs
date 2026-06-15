@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using UnrealAgent.Backend.Agent;
 using UnrealAgent.Backend.Conversation;
-using UnrealAgent.Backend.Core;
+using UnrealAgent.Backend.Chat;
 using UnrealAgent.Backend.Tool;
 using UnrealAgent.Backend.Tool.Tools;
 using Block = UnrealAgent.Backend.Core.Block;
@@ -72,7 +72,7 @@ public sealed class OpenAiLlmClient : ILlmClient
     {
         await foreach (string chunk in GenerateStreamingAsync(prompt, cancellationToken))
         {
-            yield return new ChatEvent.Text(chunk);
+            yield return new ChatEvent.Assistant(chunk);
         }
     }
 
@@ -124,7 +124,7 @@ public sealed class OpenAiLlmClient : ILlmClient
             string responseText = GetCompletionText(completion);
 
             if (onEvent is not null && !string.IsNullOrWhiteSpace(responseText))
-                await onEvent(new ChatEvent.Text(responseText));
+                await onEvent(new ChatEvent.Assistant(responseText));
 
             AssistantSpan assistantSpan = new()
             {
@@ -141,7 +141,7 @@ public sealed class OpenAiLlmClient : ILlmClient
         const string tooManyToolCalls = "도구 호출이 너무 많이 반복되어 중단했습니다.";
 
         if (onEvent is not null)
-            await onEvent(new ChatEvent.Text(tooManyToolCalls));
+            await onEvent(new ChatEvent.Assistant(tooManyToolCalls));
 
         AssistantSpan fallbackSpan = new()
         {

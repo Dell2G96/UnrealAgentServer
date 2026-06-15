@@ -1,6 +1,6 @@
 using System.Text;
 using Anthropic.Models.Messages;
-using UnrealAgent.Backend.Core;
+using UnrealAgent.Backend.Chat;
 using Block = UnrealAgent.Backend.Core.Block;
 // using Microsoft.Extensions.Hosting;
 // using OpenAI.Assistants;
@@ -136,7 +136,7 @@ public sealed class ApiStreamSpan
         {
             case ActiveBlock.Text when DeltaEvt.Delta.TryPickText(out TextDelta? TextDelta):
                 TextBuffer.Append(TextDelta.Text);
-                return new ChatEvent.Text(TextDelta.Text);
+                return new ChatEvent.Assistant(TextDelta.Text);
             
             case ActiveBlock.Thinking when DeltaEvt.Delta.TryPickThinking(out ThinkingDelta? ThinkingDelta):
                 ThinkingBuffer.Append(ThinkingDelta.Thinking);

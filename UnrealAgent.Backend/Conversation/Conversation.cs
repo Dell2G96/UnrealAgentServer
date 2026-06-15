@@ -22,7 +22,7 @@ public sealed class Conversation
     public string GetFirstUserText() => MessageSpans.FirstOrDefault()?.UserInput?.Text ?? "";
 
     // MessageSpan를 추가하고 반환한다
-    public MessageSpan AddMessageSpan(string Input)
+    public MessageSpan AddMessageSpan(UserInput Input)
     {
         MessageSpan MessageSpan = new() { UserInput = Input };
         MessageSpans.Add(MessageSpan);

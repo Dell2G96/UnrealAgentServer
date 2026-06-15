@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using UnrealAgent.Backend.Conversation;
 
 namespace UnrealAgent.Frontend.UI.Input;
 
@@ -6,7 +7,7 @@ namespace UnrealAgent.Frontend.UI.Input;
 public partial class ChatInput
 {
     // 메세지 전송 콜백
-    [Parameter] public EventCallback<string> OnSend { get; set; }
+    [Parameter] public EventCallback<UserInput> OnSend { get; set; }
     // 현재 입력 텍스트
     private string InputText = "";
 
