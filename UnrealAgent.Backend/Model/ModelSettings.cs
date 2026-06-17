@@ -26,7 +26,7 @@ public sealed class ModelSettings(ModelRegistry Registry)
     private bool ThinkingEnabled = true;
 
     // 사고 싶이 백킹필드
-    private Effort currentEffort = Effort.High;
+    private Effort CurrentEffort = Effort.High;
 
     // API 모델 ID 
     public string Model => CurrentModel.Id;
@@ -67,8 +67,8 @@ public sealed class ModelSettings(ModelRegistry Registry)
     // Claude의 사고 싶이 thinking 과 독립적으로 동작
     public Effort Effort
     {
-        get => currentEffort;
-        set { currentEffort = value; Save(); }
+        get => CurrentEffort;
+        set { CurrentEffort = value; Save(); }
     }
     
     
@@ -83,7 +83,7 @@ public sealed class ModelSettings(ModelRegistry Registry)
         {
             ["model"] = Model,
             ["thinking_enabled"] = ThinkingEnabled,
-            ["effort"] = currentEffort.ToString().ToLowerInvariant()
+            ["effort"] = CurrentEffort.ToString().ToLowerInvariant()
         };
         
         File.WriteAllText(ConfigPath, Root.ToJsonString(JsonOptions));
@@ -110,6 +110,6 @@ public sealed class ModelSettings(ModelRegistry Registry)
 
         if (Root["effort"]?.GetValue<string>() is { } EffortStr &&
             Enum.TryParse<Effort>(EffortStr, true, out Effort ParsedEffort))
-            currentEffort = ParsedEffort;
+            CurrentEffort = ParsedEffort;
     }
 }

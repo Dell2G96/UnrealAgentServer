@@ -1,3 +1,5 @@
+using Anthropic.Models.Messages;
+
 namespace UnrealAgent.Backend.Chat;
 
 
@@ -17,8 +19,7 @@ public sealed class ChatStore
 
     public void Process(ChatEvent Evt)
     {
-        if (Evt is ChatEvent.Assistant or ChatEvent.Thinking)
-            bIsReceiving = true;
+        bIsReceiving = Evt is ChatEvent.User;
 
         switch (Evt)
         {
@@ -61,12 +62,17 @@ public sealed class ChatStore
 
                 break;
             }
+
+            case ChatEvent.System { Content: var Content }:
+            {
+                Messages.Add(new ChatUIMessage.System(Content));
+                break;
+            }
+            
             case ChatEvent.Done:
             {
                 ThinkingComplete();
-                bIsReceiving = false;
-
-
+                
                 break;
             }
         }

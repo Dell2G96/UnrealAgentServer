@@ -1,0 +1,23 @@
+@using UnrealAgent.Backend.Chat
+
+@* 메세지 타입에 따라 적절한 렌더링 컴포넌트로 분기*@
+
+@switch (UIMessage)
+{
+    case ChatUIMessage.User UserMsg:
+    {
+        <UserMessage Message ="UserMsg" />
+        break;
+    }
+
+    case ChatUIMessage.Assistant AsstMsg:
+    {
+        <AssistantMessage Message="AsstMsg" />
+        break;
+    }
+    case ChatUIMessage.System SysMsg:
+    {
+        <SystemMessage Message = "SysMsg" />
+        break;
+    }
+}
