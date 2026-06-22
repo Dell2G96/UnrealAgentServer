@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace UnrealAgent.Backend.Chat;
 
 /// <summary>
@@ -23,8 +25,6 @@ public abstract record class ChatUIMessage
     {
         
     }
-    
-    
     
     //-----------------------------------------------------------------------------
     // Assistant
@@ -52,9 +52,63 @@ public abstract record class ChatUIMessage
     }
     
     //-----------------------------------------------------------------------------
+    // Tool
+    //-----------------------------------------------------------------------------
+    
+    // 도구 실행 메세지
+    public sealed record Tool(string Name, string Content) : ChatUIMessage
+    {
+        // 클로드가 발급한 tool_use ID
+        public string ToolUseId { get; set; } = "";
+
+        // 도구 입력 파라미터
+        public string Input { get; set; } = "";
+
+        // 도구 실행 시작 시간. 
+        // UI에서 실시간 경과 시간을 계산
+        public DateTime StartTime { get; init; }
+
+        // 도구 실행 소요 최종 시간 , 완료 후 확정
+        public double ElapsedSeconds { get; init; }
+
+        // 도구 실행 완료 여부
+        public bool bIsCompleted { get; init; }
+
+        // 입력 JSON에서 지정 필드의 문자열 값을 추출
+        public string GetInputField(string FieldName, string Fallback = "")
+        {
+            if (string.IsNullOrWhiteSpace(Input))
+                return Fallback;
+
+            try
+            {
+                using JsonDocument Doc = JsonDocument.Parse(Input);
+                return Doc.RootElement.TryGetProperty(FieldName, out JsonElement Element)
+                    ? Element.GetString() ?? Fallback
+                    : Fallback;
+            }
+            catch
+            {
+                return Fallback;
+            }
+        }
+    }
+    
+    //-----------------------------------------------------------------------------
     // System
     // -----------------------------------------------------------------------------
     
     // 시스템 메세지
     public sealed record System(string Content) : ChatUIMessage;
 }
+
+
+
+
+
+
+
+
+
+
+

@@ -15,9 +15,24 @@
         <AssistantMessage Message="AsstMsg" />
         break;
     }
+    case ChatUIMessage.Thinking ThinkMsg:
+    {
+        <ThinkingBlock Message="ThinkMsg"/>
+        break;
+    }
+        
+    case ChatUIMessage.Tool ToolMsg:
+    {
+        <ToolBlock Message="ToolMsg" />
+        break;
+    }
+        
     case ChatUIMessage.System SysMsg:
     {
         <SystemMessage Message = "SysMsg" />
         break;
     }
+
+
+   
 }
