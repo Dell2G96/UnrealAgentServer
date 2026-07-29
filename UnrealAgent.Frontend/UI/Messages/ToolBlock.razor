@@ -40,6 +40,13 @@
                     <WebFetchBlock Message="Message"/>
                     break;
                 }
+
+                // 코드 실행 도구 (mcp__unreal__execute_python 등)
+                case var Name when CodeBlock.IsCodeTool(Name):
+                {
+                    <CodeBlock Message="Message"/>
+                    break;
+                }
             }
         </div>
     </details>

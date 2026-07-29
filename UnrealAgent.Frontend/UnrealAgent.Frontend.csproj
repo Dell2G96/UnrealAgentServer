@@ -16,4 +16,8 @@
       <PackageReference Include="Microsoft.AspNetCore.App.Internal.Assets" Version="11.0.0-preview.4.26230.115" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="wwwroot\js\" />
+    </ItemGroup>
+
 </Project>

@@ -23,13 +23,15 @@ public partial class Chat : IAsyncDisposable
 
     protected override void OnInitialized()
     {
-        AgentRunner.OnChatEvent += OnChatEvent;
+        AgentRunner.OnChatEvent = OnChatEvent;
     }
 
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        AgentRunner.OnChatEvent -= OnChatEvent;
-        await ValueTask.CompletedTask;
+        if (AgentRunner.OnChatEvent == OnChatEvent)
+            AgentRunner.OnChatEvent = null;
+            
+        return ValueTask.CompletedTask;
     }
 
     // AgentRunner의 Chatevent를 UI 스레드에서 처리한다

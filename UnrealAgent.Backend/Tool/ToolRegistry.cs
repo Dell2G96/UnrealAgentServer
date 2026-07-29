@@ -6,6 +6,7 @@ using Anthropic.Models.Messages;
 using Microsoft.Extensions.DependencyInjection;
 using OpenAI.Chat;
 using UnrealAgent.Backend.Agent;
+using UnrealAgent.Backend.Mcp;
 using UnrealAgent.Backend.Tool.Attributes;
 
 namespace UnrealAgent.Backend.Tool.Tools;
@@ -22,6 +23,8 @@ public sealed class ToolRegistry(IServiceProvider serviceProvider)
         AnthropicTool AnthropicSchema,
         string OpenAiSchemaJson);
 
+    // private sealed record ToolEntry(IAgentTool Tool, AnthropicTool Schema);
+    
     // 도구 이름 -> ToolEntry 매핑
     private readonly Dictionary<string, ToolEntry> Tools = new();
 
@@ -104,6 +107,35 @@ public sealed class ToolRegistry(IServiceProvider serviceProvider)
         }
     }
 
+    /// <summary>
+    /// MCP 서버에서 받은 도구를 동적으로 등록
+    /// 도구 이름은 "mcp__{서버이름}__{도구이름}" 형식
+    /// </summary>
+    public void RegisterMcpTools(string ServerName, McpClient Client, List<McpToolDefinition> McpTools)
+    {
+        foreach (McpToolDefinition Def in McpTools)
+        {
+            string RegistryName = $"mcp__{ServerName}__{Def.Name}";
+            
+            // MCP 에서 받은 inputSchema를 그대로 안트로픽 InputSchema로 변환
+            InputSchema Schema = Def.InputSchema.Deserialize<InputSchema>() ?? new()
+            {
+                Properties = new Dictionary<string, JsonElement>(),
+                Required = new List<string>()
+            };
+
+            AnthropicTool ToolSchema = new()
+            {
+                Name = RegistryName,
+                Description = Def.Description,
+                InputSchema = Schema
+            };
+
+            McpProxyTool Proxy = new(Client, Def.Name);
+            Tools[RegistryName] = new ToolEntry(Proxy, ToolSchema, GenerateOpenAiSchemaJson(Schema));
+        }
+    }
+        
     private InputSchema GenerateSchemaFromType(ClrType type)
     {
         ClrType? inputType = FindInputType(type);

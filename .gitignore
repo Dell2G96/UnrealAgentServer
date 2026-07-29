@@ -1,7 +1,10 @@
 bin/
 obj/
+Build/
+
 /packages/
 riderModule.iml
 /_ReSharper.Caches/
+
 *.md
 *.png
