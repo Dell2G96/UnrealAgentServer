@@ -1,5 +1,6 @@
 using UnrealAgent.Backend.Conversation;
 using UnrealAgent.Backend.Chat;
+using UnrealAgent.Backend.Security;
 
 namespace UnrealAgent.Backend.Agent;
 
@@ -11,6 +12,9 @@ public sealed class AgentSession(AgentLoop Loop)
 {
     // 세션의 대화 히스토리
     public Conversation.Conversation Conversation { get; } = new();
+    
+    // 이 세션의 도구 실행 권한 엔진
+    public PermissionEngine PermissionEngine { get; } = new();
     
     // 사용자 메세지를 처리한다
     public IAsyncEnumerable<ChatEvent> ProcessMessage(UserInput Input) => Loop.RunAsync(Input, this);

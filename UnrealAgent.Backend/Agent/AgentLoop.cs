@@ -1,8 +1,10 @@
+using System.Runtime.CompilerServices;
 using Anthropic.Models.Messages;
 using UnrealAgent.Backend.Auth;
 using UnrealAgent.Backend.Conversation;
 using UnrealAgent.Backend.Chat;
 using UnrealAgent.Backend.Prompt;
+using UnrealAgent.Backend.Security;
 using UnrealAgent.Backend.Tool;
 using Block = UnrealAgent.Backend.Core.Block;
 
@@ -16,8 +18,7 @@ public sealed class AgentLoop(PromptBuilder PromptBuilder, ToolExecutor ToolExec
 {
     // 사용자 메세지 1건에 대한 에이전트 루프를 실행
     // 호출 1회가 MessageSpan 1개에 대응하며, 모델이 도구를 사용할 때 마다 내부에서 API 를 반복 하출한다
-
-    public async IAsyncEnumerable<ChatEvent> RunAsync(UserInput Input, AgentSession Session)
+    public async IAsyncEnumerable<ChatEvent> RunAsync(UserInput Input, AgentSession Session, [EnumeratorCancellation] CancellationToken Ct = default)
     {
         // 대화 히스토리에 사용자 입력 추가
         MessageSpan CurrentMessageSpan = Session.Conversation.AddMessageSpan(Input);
@@ -54,16 +55,43 @@ public sealed class AgentLoop(PromptBuilder PromptBuilder, ToolExecutor ToolExec
                 case ApiStreamSpan.Result.ExecuteTools { CompletedSpan: { } AssistantSpan, ToolCalls: { } ToolCalls }:
                 {
                     CurrentMessageSpan.AssistantSpans.Add(AssistantSpan);
-                    
-                    // 도구 실행
+                    // 권한 -> 실행
                     foreach (Block.ToolUse ToolCall in ToolCalls)
                     {
+                        // 권한 확인
+                        ToolPermission Permission = await Session.PermissionEngine.GetPermissionAsync(ToolCall);
+                        
+                        // 사용자에게 권한 요청
+                        if (Permission == ToolPermission.Ask)
+                        {
+                            ChatEvent.ToolPermissionRequest PermissionRequest =
+                                new(ToolCall.Id, ToolCall.Name, ToolCall.InputJson);
+                            yield return PermissionRequest;
+                            
+                            // UI에게 권한을 선택하기 전까지 대기
+                            ToolPermission Result = await PermissionRequest.Tcs.Task.WaitAsync(Ct);
+                            
+                            // 도구 거부 처리
+                            if (Result == ToolPermission.Deny)
+                            {
+                                string DenyMsg = $"User denied execution of tool '{ToolCall.Name}'.";
+                                AssistantSpan.ToolExecutions.Add(new AssistantSpan.ToolExecution(ToolCall.Id, ToolCall.Name, DenyMsg, bIsError: true));
+
+                                yield return new ChatEvent.ToolEnd(ToolCall.Id, ToolCall.Name, DenyMsg);
+                                continue;
+                            }
+                            
+                            //AlwaysAllow인 경우 권한 엔진에 영구 등록
+                            if(Result == ToolPermission.AlwaysAllow)
+                                Session.PermissionEngine.Allow(ToolCall.Name);
+                        }
+                        // 도구 실행
+                  
                         await foreach (ChatEvent Evt in ToolExecutor.ExecuteAsync(ToolCall, AssistantSpan, Session))
                         {
                             yield return Evt;
                         }
                     }
-
                     break;
                 }
                 

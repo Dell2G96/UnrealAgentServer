@@ -16,7 +16,11 @@ public partial class WebSearchBlock : ComponentBase
     
     // 이 도구의 summary 바 메타데이터
     public static ToolMeta GetInfo(ChatUIMessage.Tool Msg)
-        => new("language", "Web Search", "font-mono", Msg.GetInputField("query", "web_search"));
+        => new("language", "Web Search", "font-mono", ChatUIMessage.Tool.GetInputField(Msg.Input, "query", "web_search"));
+    
+    // 권한 다이얼로그에 표시할 요약
+    public static string GetPermissionSummary(string InputJson)
+        => ChatUIMessage.Tool.GetInputField(InputJson, "query");
     
     //--------------------------------------------------------------------------
     // 검색 결과 파싱
@@ -24,10 +28,9 @@ public partial class WebSearchBlock : ComponentBase
     
     // 검색 결과 항목
     private sealed record SearchResult(
-        [property: JsonPropertyName("title")] string Title,
-        [property: JsonPropertyName("url")] string Url,
-        [property: JsonPropertyName("page_age")]
-        string? PageAge)
+        [property: JsonPropertyName("title")]    string Title,
+        [property: JsonPropertyName("url")]      string Url,
+        [property: JsonPropertyName("page_age")] string? PageAge)
     {
         // URL 에서 추출한 도메인
         public string Domain => Uri.TryCreate(Url, UriKind.Absolute, out Uri? Parsed)

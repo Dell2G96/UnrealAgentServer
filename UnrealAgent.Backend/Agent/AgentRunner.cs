@@ -36,7 +36,7 @@ public sealed class AgentRunner(AgentSession Session) : BackgroundService
     }
 
     // 메세지 큐를 추가하고 BackgroundService 루프를 꺠운다
-    public async void EnqueueMessage(UserInput Input)
+    public async Task EnqueueMessage(UserInput Input)
     {
         // 사용자 메시지 UI를 위해 추가
         await DispatchEventAsync(new ChatEvent.User(Input.Text)); 

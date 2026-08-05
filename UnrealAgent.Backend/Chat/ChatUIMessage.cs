@@ -21,10 +21,8 @@ public abstract record class ChatUIMessage
     //-----------------------------------------------------------------------------
 
     // 사용자 메세지
-    public sealed record User(string Content) : ChatUIMessage
-    {
-        
-    }
+    public sealed record User(string Content) : ChatUIMessage;
+
     
     //-----------------------------------------------------------------------------
     // Assistant
@@ -75,14 +73,14 @@ public abstract record class ChatUIMessage
         public bool bIsCompleted { get; init; }
 
         // 입력 JSON에서 지정 필드의 문자열 값을 추출
-        public string GetInputField(string FieldName, string Fallback = "")
+        public static string GetInputField(string Json, string FieldName ,string Fallback = "")
         {
-            if (string.IsNullOrWhiteSpace(Input))
+            if (string.IsNullOrEmpty(Json))
                 return Fallback;
 
             try
             {
-                using JsonDocument Doc = JsonDocument.Parse(Input);
+                using JsonDocument Doc = JsonDocument.Parse(Json);
                 return Doc.RootElement.TryGetProperty(FieldName, out JsonElement Element)
                     ? Element.GetString() ?? Fallback
                     : Fallback;
