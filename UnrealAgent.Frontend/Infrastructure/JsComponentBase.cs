@@ -10,6 +10,9 @@ public abstract class JsComponentBase : ComponentBase, IAsyncDisposable
     // 로드된 JS 모듈 참조 . 
     // OnModuleLoaded() 이후 사용 가능
     protected IJSObjectReference Module = null!;
+    
+    // 빌드 시각 기반 캐시 무효화 버전
+    private static readonly long CacheBuster = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -42,7 +45,7 @@ public abstract class JsComponentBase : ComponentBase, IAsyncDisposable
         string Name = GetType().Name;
         
         // "./UI/Input/ChatInput.razor.js"
-        return $"./{Relative}/{Name}.razor.js";
+        return $"./{Relative}/{Name}.razor.js?v={CacheBuster}";
     }
 
     public async ValueTask DisposeAsync()
