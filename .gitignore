@@ -1,6 +1,7 @@
 bin/
 obj/
 Build/
+Docs/
 
 /packages/
 riderModule.iml
