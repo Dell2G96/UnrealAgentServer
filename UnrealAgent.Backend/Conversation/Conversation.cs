@@ -117,5 +117,11 @@ public sealed class Conversation
 
         return new MessageParam { Role = Role.User, Content = ResultBlocks };
     }
+    
+    // 대화 내역 초기화
+    public void Clear()
+    {
+        MessageSpans.Clear();
+    }
 
 }

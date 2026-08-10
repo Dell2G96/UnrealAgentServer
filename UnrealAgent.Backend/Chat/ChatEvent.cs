@@ -31,6 +31,9 @@ public abstract record ChatEvent
     // 시스템 메세지 (커맨드 결과, 에러 등)
     public sealed record System(string Content) : ChatEvent;
     
+    // 커맨드 메세지
+    public sealed record Command(string Name, string Argument) : ChatEvent;
+    
     // 스트림 종료
     public sealed record Done : ChatEvent;
 }

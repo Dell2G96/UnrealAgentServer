@@ -49,6 +49,7 @@
 using UnrealAgent.Backend.Agent;
 using UnrealAgent.Backend.Auth;
 using UnrealAgent.Backend.Command;
+using UnrealAgent.Backend.Command.Commands;
 using UnrealAgent.Backend.Mcp;
 using UnrealAgent.Backend.Model;
 using UnrealAgent.Backend.Model.Models;
@@ -107,7 +108,7 @@ WebApplication App = Builder.Build();
 App.Services.GetRequiredService<ToolRegistry>().DiscoveryTools(typeof(WebSearch).Assembly);
 // 06.12 추가 (Model 설정)
 App.Services.GetRequiredService<ModelRegistry>().DiscoverModels(typeof(Opus48).Assembly);
-App.Services.GetRequiredKeyedService<CommandRegistry>().DiscoverCommands(typeof(ClearCommand).Assembly);
+App.Services.GetRequiredService<CommandRegistry>().DiscoverCommands(typeof(ClearCommand).Assembly);
 
 
 // ── Auth 설정 로드 ──
