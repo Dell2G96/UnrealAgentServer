@@ -124,4 +124,16 @@ public sealed class Conversation
         MessageSpans.Clear();
     }
 
+    // 대화 히스토리를 요약 텍스트로 교체
+    // 기존 MessageSpan을 모두 지우고, 요약을 Assistant 메시지로 담은 MessageSpan 하나를 추가한다.
+    public void Compact(string Summary)
+    {
+        MessageSpans.Clear();
+        
+        MessageSpans.Add(new MessageSpan
+        {
+            AssistantSpans = { new AssistantSpan { AssistantBlocks = [new Block.Text(Summary)]} }
+        });
+    }
+
 }
