@@ -6,6 +6,32 @@ export function setupKeyBindings(textarea, dotNetRef)
 {
     textarea.addEventListener("keydown", function (e)
     {
+        // 팝업이 열려져있을 때 키 처리
+        if(document.querySelector(".command-popup"))
+        {
+            switch (e.key)
+            {
+                case "ArrowUp":
+                    e.preventDefault();
+                    dotNetRef.invokeMethodAsync("PopupNavigate", -1);
+                    return;
+                case "ArrowDown":
+                    e.preventDefault();
+                    dotNetRef.invokeMethodAsync("PopupNavigate", 1);
+                    return;
+                case "Tab":
+                case "Enter":
+                    e.preventDefault();
+                    dotNetRef.invokeMethodAsync("PopupSelect");
+                    return;
+                case "Escape":
+                    e.preventDefault();
+                    dotNetRef.invokeMethodAsync("PopupClose");
+                    return;
+            }
+        }
+        
+        // 기본 키 바인딩
         if(e.key === "Enter" && !e.shiftKey)
         {
             e.preventDefault();
