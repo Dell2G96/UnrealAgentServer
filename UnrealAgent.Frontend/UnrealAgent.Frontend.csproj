@@ -14,6 +14,7 @@
     <ItemGroup>
       <PackageReference Include="Markdig" Version="1.2.0" />
       <PackageReference Include="Microsoft.AspNetCore.App.Internal.Assets" Version="11.0.0-preview.4.26230.115" />
+      <PackageReference Include="YamlDotNet" Version="18.1.0" />
     </ItemGroup>
 
     <ItemGroup>

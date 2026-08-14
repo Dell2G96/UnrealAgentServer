@@ -15,6 +15,10 @@ public static class AgentPaths
     
     // 프로젝트 레벨 설정 디렉터리 경로
     public static string ConfigDir => Path.Combine(RootPath, ".unrealagent");
+
+    // 스킬 디렉터리 경로 
+    // ({ConfigDir}/skills)
+    public static string SkillsDir => Path.Combine(ConfigDir, "skills");
     
     
     

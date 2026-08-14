@@ -55,6 +55,7 @@ using UnrealAgent.Backend.Mcp;
 using UnrealAgent.Backend.Model;
 using UnrealAgent.Backend.Model.Models;
 using UnrealAgent.Backend.Prompt;
+using UnrealAgent.Backend.Skill;
 using UnrealAgent.Backend.Tool;
 using UnrealAgent.Backend.Tool.Tools;
 using UnrealAgent.Frontend.Infrastructure;
@@ -96,6 +97,8 @@ Builder.Services.AddSingleton<ToolExecutor>();
 // ── Command 모듈 ──
 Builder.Services.AddSingleton<CommandRegistry>();
 
+// ── Skill 모듈 ──
+Builder.Services.AddSingleton<SkillRegistry>();
 
 // ── Claude 모델 레지스트리 & 런타임 설정 ──
 Builder.Services.AddSingleton<ModelRegistry>();
@@ -114,6 +117,8 @@ App.Services.GetRequiredService<ToolRegistry>().DiscoveryTools(typeof(WebSearch)
 App.Services.GetRequiredService<ModelRegistry>().DiscoverModels(typeof(Opus48).Assembly);
 App.Services.GetRequiredService<CommandRegistry>().DiscoverCommands(typeof(ClearCommand).Assembly);
 
+// ── 스킬 파일시스템 스캔 ──
+App.Services.GetRequiredService<SkillRegistry>().DiscoverSkills();
 
 // ── Auth 설정 로드 ──
 App.Services.GetRequiredService<AuthConfig>().Load();

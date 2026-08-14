@@ -5,6 +5,7 @@ using UnrealAgent.Backend.Core;
 using UnrealAgent.Backend.Mode;
 using UnrealAgent.Backend.Model;
 using UnrealAgent.Backend.Model.Models;
+using UnrealAgent.Backend.Skill;
 using UnrealAgent.Backend.Tool.Tools;
 
 namespace UnrealAgent.Backend.Prompt;
@@ -171,21 +172,22 @@ public sealed class PromptBuilder  (ToolRegistry ToolRegistry)
 */
 #endregion
 
-public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings ModelSettings)
+public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings ModelSettings, SkillRegistry SkillRegistry)
 {
     // 빌더 체인의 각 섹션 , 토큰 측정 시 특정 섹션을 제외할 수 있다
     [Flags]
     public enum Section
     {
-        None           = 0,
-        Identity       = 1 << 0,
-        System         = 1 << 1,
-        DoingTasks     = 1 << 2,
-        Proactiveness  = 1 << 3,
-        ToneAndStyle   = 1 << 4,
+        None             = 0,
+        Identity         = 1 << 0,
+        System           = 1 << 1,
+        DoingTasks       = 1 << 2,
+        Proactiveness    = 1 << 3,
+        ToneAndStyle     = 1 << 4,
         OutputEfficiency = 1 << 5,
-        ModeOverride = 1 << 6,
-        UnrealAgentMd = 1 << 7,
+        ModeOverride     = 1 << 6,
+        UnrealAgentMd    = 1 << 7,
+        Skills           = 1 << 8,
     }
     
     // ── API 파라미터 생성 ──
@@ -264,10 +266,19 @@ public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings Model
         
         if (!Skip.HasFlag(Section.OutputEfficiency))
             Sb.AppendLine(OutputEfficiency());
+
+        if (!Skip.HasFlag(Section.Skills))
+        {
+            string? Skills = SkillListing();
+
+            if (Skills is not null)
+                Sb.AppendLine(Skills);
+        }
         
         return Sb.ToString();
     }
     
+
     // ── 시스템 프롬프트 ──
     
     /// <summary>
@@ -510,5 +521,30 @@ public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings Model
                 </system-reminder>
                 """;
     }
+    
+    /// <summary>
+    /// 스킬 목록을 시스템 프롬프트에 포함한다. 스킬이 없으면 null을 반환한다.
+    /// disableModelInvocation인 스킬은 제외한다
+    /// </summary>
+    private string? SkillListing()
+    {
+        string? Listing = SkillRegistry.GetSkillListingPrompt();
+        if (Listing is null)
+            return null;
+        
+        return $"""
+                <system-reminder>
+                The following skills are available for use with the skill tool:
 
+                {Listing}
+
+                /<skill-name> is shorthand for users to invoke a skill.
+                When executed, the skill gets expanded to a full prompt.
+                Use the skill tool to execute them.
+                IMPORTANT: Only use the skill tool for skills listed above — do not guess
+                or use built-in commands.
+                </system-reminder>
+                """;
+
+    }
 }
