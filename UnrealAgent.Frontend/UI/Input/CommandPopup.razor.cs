@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using UnrealAgent.Backend.Command;
+using UnrealAgent.Backend.Skill;
 using UnrealAgent.Frontend.Infrastructure;
 
 namespace UnrealAgent.Frontend.UI.Input;
@@ -10,9 +11,15 @@ public partial class CommandPopup : JsComponentBase
     // 슬래시 커맨드를 등록, 실행하는 레지스트
     [Inject] private CommandRegistry CommandRegistry { get; set; } = null!;
     
+    // 스킬 목록
+    [Inject] private SkillRegistry SkillRegistry { get; set; } = null!;
+    
     // 등록된 슬래시 커맨드 목록
     private IReadOnlyList<CommandRegistry.CommandEntry> Commands =>
         CommandRegistry.GetAll();
+    
+    // 사용자 전용 스킬 목록
+    private IReadOnlyList<SkillDefinition> Skills => SkillRegistry.GetUserInvocableSkills();
     
     // 팝업 표시 여부
     public bool bShowPopup { get; private set; }
@@ -35,6 +42,7 @@ public partial class CommandPopup : JsComponentBase
         if(!Text.StartsWith('/') || Text.Contains(' '))
         {
             bShowPopup = false;
+            
             StateHasChanged();
             return;
         }
@@ -48,7 +56,12 @@ public partial class CommandPopup : JsComponentBase
             .Select(C => new PopupItem(C.Name[1..], C.Description, C.Icon))
             .ToList();
 
-        FilteredItems = CommandItems;
+        List<PopupItem> SkillItems = Skills
+            .Where(S => S.Name.Contains(Query, StringComparison.OrdinalIgnoreCase))
+            .Select(S => new PopupItem(S.Name, S.Description, "auto_stories"))
+            .ToList();
+
+        FilteredItems = [..CommandItems, ..SkillItems];
         bShowPopup = FilteredItems.Count > 0;
         SelectedIndex = 0;
         

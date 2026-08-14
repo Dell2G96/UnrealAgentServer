@@ -1,19 +1,27 @@
-<!-- 어시스턴트 메시지 (좌측 정렬)입니다. -->
-<div class="flex gap-4 max-w-5xl mx-auto w-full z-10 msg-enter">
-    <!-- AI 아바타 -->
-    <div class="size-8 shrink-0 rounded bg-gradient-to-b from-[#333] to-[#1a1a1a] flex items-center justify-center shadow-lg relative overflow-hidden border border-[#444] mt-1">
-        <span class="font-sans font-black text-[#e0e0e0] text-sm leading-none drop-shadow-sm">U</span>
+<!-- 어시스턴트 메시지 — 카카오톡 '상대 말풍선' (좌측 정렬, 흰색, 아바타 + 이름) -->
+<div class="flex gap-2 max-w-5xl mx-auto w-full z-10 msg-enter">
+
+    <!-- 프로필 아바타 (카톡은 둥근 사각형) -->
+    <div class="size-9 shrink-0 rounded-xl bg-kk-avatar flex items-center justify-center overflow-hidden">
+        <span class="font-sans font-black text-white text-sm leading-none">U</span>
     </div>
-    <div class="flex flex-col gap-3 w-full max-w-3xl">
-        <div class="flex items-baseline gap-2">
-            <span class="text-xs font-bold text-[#e0e0e0] tracking-wide">UnrealAgent</span>
-            <span class="text-[10px] text-[#555] font-sans">@Message.Timestamp.ToString("h:mm tt")</span>
-        </div>
+
+    <div class="flex flex-col gap-1 min-w-0">
+        <!-- 상대 이름 (카톡은 상대 메시지에만 표시) -->
+        <span class="text-[12px] text-kk-name">UnrealAgent</span>
 
         @if (!string.IsNullOrEmpty(Message.Content))
         {
-            <div class="ml-11 mt-3 text-[14px] text-[#e0e0e0] leading-relaxed tracking-wide max-w-3xl markdown-body">
-                @((MarkupString)RenderMarkdown(Message.Content))
+            <div class="flex items-end gap-1.5">
+                <!-- kk-bubble-other : 말풍선 왼쪽 위에 붙는 꼬리 (app.css) -->
+                <div class="kk-bubble kk-bubble-other bg-kk-other text-kk-text text-[14px] leading-relaxed
+                            px-3 py-2 rounded-xl max-w-[42rem] min-w-0 markdown-body markdown-kk">
+                    @((MarkupString)RenderMarkdown(Message.Content))
+                </div>
+
+                <span class="text-[11px] text-kk-time shrink-0 pb-0.5">
+                    @ChatTimeFormat.ToKakaoTime(Message.Timestamp)
+                </span>
             </div>
         }
     </div>

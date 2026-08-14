@@ -21,10 +21,66 @@ details summary::-webkit-details-marker { display: none; }
 }
 .msg-enter { animation: msg-in 0.3s ease-out; }
 
-/* 메시지 간격 축소 (연속 Tool/Assistant) */
+/* 메시지 간격 축소 (연속 Tool/Assistant)
+   대화방 간격이 gap-8(2rem) → gap-3(0.75rem)으로 줄었으므로 축소 폭도 함께 줄인다. */
 .msg-tool + .msg-tool,
 .msg-tool + .msg-assistant,
-.msg-assistant + .msg-tool { margin-top: -1rem; }
+.msg-assistant + .msg-tool { margin-top: -0.25rem; }
+
+/* ────────────────────────────────────────────────────────────
+   카카오톡 스타일 말풍선
+   ──────────────────────────────────────────────────────────── */
+
+/* 꼬리는 border 트릭으로 만든 삼각형이다.
+   가로/세로 0짜리 요소에 두꺼운 테두리를 주면 네 변이 삼각형 네 개가 되는데,
+   그중 세 변을 투명으로 두면 남은 한 변만 삼각형으로 보인다. */
+.kk-bubble { position: relative; }
+.kk-bubble::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+}
+
+/* 내 말풍선 : 오른쪽 위에 노란 꼬리 */
+.kk-bubble-mine::before {
+    right: -6px;
+    border-width: 0 0 8px 8px;
+    border-color: transparent transparent transparent #fef01b;
+}
+
+/* 상대 말풍선 : 왼쪽 위에 흰 꼬리 */
+.kk-bubble-other::before {
+    left: -6px;
+    border-width: 0 8px 8px 0;
+    border-color: transparent #ffffff transparent transparent;
+}
+
+/* '입력 중' 점 세 개 */
+.kk-typing-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: #9aa8b4;
+    display: inline-block;
+    animation: kk-typing 1.2s ease-in-out infinite;
+}
+.kk-typing-dot:nth-child(2) { animation-delay: 0.15s; }
+.kk-typing-dot:nth-child(3) { animation-delay: 0.3s; }
+@keyframes kk-typing {
+    0%, 60%, 100% { opacity: 0.35; transform: translateY(0); }
+    30%           { opacity: 1;    transform: translateY(-3px); }
+}
+
+/* 대화방 스크롤바 (기본 다크 스크롤바가 하늘색 배경에서 튀어 보이므로 덮어쓴다) */
+.kk-scroll::-webkit-scrollbar-track { background: #b2c7d9; border-left: 1px solid #a2b7c9; }
+.kk-scroll::-webkit-scrollbar-thumb { background: #8fa6b8; border: 2px solid #b2c7d9; }
+.kk-scroll::-webkit-scrollbar-thumb:hover { background: #7d94a6; }
+
+/* (밝은 말풍선용 Markdown 색 보정은 이 파일 맨 아래 .markdown-kk 블록에 있다.
+   .markdown-body 규칙보다 반드시 뒤에 와야 하므로 위치를 옮기지 말 것.) */
 
 /* Tool 콘텐츠 리사이즈 */
 .tool-content-resize {
@@ -198,3 +254,33 @@ details summary::-webkit-details-marker { display: none; }
     background: #e0e0e0;
 }
 .auth-tab.active { background: rgba(255,255,255,0.06); color: #e0e0e0; }
+
+/* ────────────────────────────────────────────────────────────
+   흰 말풍선 안의 Markdown 색 보정 (.markdown-kk)
+
+   위쪽 .markdown-body 규칙은 전부 다크 배경 기준 색이라
+   흰 말풍선에서는 글자가 흐릿한 회색으로 보인다.
+
+   두 가지 이유로 이 블록은 파일 '맨 아래'에 있고 선택자도 두 클래스를 겹쳐 쓴다.
+   1) .markdown-kk strong 과 .markdown-body strong 은 특정도(specificity)가 같다.
+      같으면 나중에 선언된 쪽이 이기므로, 반드시 .markdown-body 뒤에 와야 한다.
+   2) .markdown-body.markdown-kk 처럼 클래스를 두 개 겹치면 특정도가 더 높아져
+      선언 순서와 무관하게 항상 이긴다. (1)과 (2)를 함께 걸어 두 번 안전장치를 둔다.
+
+   두 클래스는 AssistantMessage.razor 의 말풍선에 함께 부여된다.
+   ──────────────────────────────────────────────────────────── */
+.markdown-body.markdown-kk { color: #1a1a1a; }
+.markdown-body.markdown-kk strong { color: #000000; font-weight: 700; }
+.markdown-body.markdown-kk em { color: #444444; }
+.markdown-body.markdown-kk h1,
+.markdown-body.markdown-kk h2,
+.markdown-body.markdown-kk h3 { color: #111111; }
+.markdown-body.markdown-kk a { color: #1a73c7; }
+.markdown-body.markdown-kk code { background: #eef0f2; color: #b5453b; }
+.markdown-body.markdown-kk pre { background: #f7f7f7; border-color: #dddddd; }
+.markdown-body.markdown-kk pre code { background: transparent; color: #333333; }
+.markdown-body.markdown-kk blockquote { border-left-color: #8fa6b8; color: #555555; }
+.markdown-body.markdown-kk hr { border-top-color: #dddddd; }
+.markdown-body.markdown-kk th,
+.markdown-body.markdown-kk td { border-color: #dddddd; }
+.markdown-body.markdown-kk th { background: #f2f2f2; color: #111111; }

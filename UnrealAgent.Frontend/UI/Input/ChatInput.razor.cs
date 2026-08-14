@@ -25,6 +25,12 @@ public partial class ChatInput :JsComponentBase
     // 커맨드 팝업 참조
     private CommandPopup CmdPopup = null!;
     
+    // [+] 패널(모델/Thinking/Effort/모드)이 펼쳐져 있는지 여부
+    private bool bShowPanel;
+
+    // 전송 버튼을 노란색으로 활성화할지 판단한다
+    private bool bHasText => !string.IsNullOrWhiteSpace(InputText);
+
     // textarea 바인딩 값, 변경 시 커맨드 팝업을 갱신
     // 현재 입력 텍스트
     private string InputText
@@ -35,15 +41,20 @@ public partial class ChatInput :JsComponentBase
             field = value;
             CmdPopup.Update(value);
         }
-    }
-   
+    } = "";
+
+
+    // [+] 버튼 : 패널을 여닫는다
+    private void TogglePanel() => bShowPanel = !bShowPanel;
+
 
     // JS 모듈 로드 후 Enter 키 바인딩 설정
     protected override async Task OnModuleLoaded()
     {
         DotNetRef = DotNetObjectReference.Create(this);
         await Module.InvokeVoidAsync("setupKeyBindings", TextAreaRef, DotNetRef);
-        
+        // 입력 내용에 따라 textarea 높이를 늘려 준다 (카톡과 동일한 동작)
+        await Module.InvokeVoidAsync("setupAutoGrow", TextAreaRef);
     }
     
     // Shift + Tab 시 JS에서 호출된다
@@ -76,11 +87,17 @@ public partial class ChatInput :JsComponentBase
     private async Task HandleSubmit()
     {
         string Trimmed = InputText.Trim();
-        
+
         if (string.IsNullOrEmpty(Trimmed))
             return;
 
         InputText = "";
+
+        // 늘어나 있던 textarea 높이를 한 줄로 되돌린다.
+        // Module은 첫 렌더 이후에만 채워지므로 null 검사를 함께 한다.
+        if (Module is not null)
+            await Module.InvokeVoidAsync("resetHeight", TextAreaRef);
+
         await OnSend.InvokeAsync(Trimmed);
     }
 }

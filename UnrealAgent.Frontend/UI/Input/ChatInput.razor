@@ -1,57 +1,82 @@
 @inherits JsComponentBase
 
-<!-- 메시지 입력 영역입니다. -->
-<div class="p-4 bg-[#1b1b1b] border-t border-[#2a2a2a] relative z-20">
+<!-- 카카오톡 스타일 하단 입력바 -->
+<div class="px-3 py-2.5 bg-kk-bar border-t border-kk-line relative z-20">
     <div class="max-w-4xl mx-auto">
-        
+
         <!-- 입력 폼: Enter로 제출, 기본 submit 동작은 막습니다. -->
         <form @onsubmit="HandleSubmit" @onsubmit:preventDefault>
 
-            <!-- 입력 컨테이너: 포커스 시 파란색 테두리가 나타납니다. -->
-            <div class="relative bg-[#151515] rounded-md border border-[#333] shadow-xl focus-within:ring-1 focus-within:ring-[#0070e0] focus-within:border-[#0070e0] transition-all">
+            <!-- relative : CommandPopup(absolute bottom-full)의 기준점입니다. -->
+            <div class="relative">
 
                 <!-- 커맨드 팝업입니다. -->
                 <CommandPopup @ref="CmdPopup" />
 
-                <!-- 텍스트 입력: oninput으로 실시간 바인딩합니다. 높이 고정, 내부 스크롤합니다. -->
-                <textarea @ref="TextAreaRef"
-                          @bind="InputText"
-                          @bind:event="oninput"
-                          class="w-full bg-transparent border-none text-[14px] text-[#e0e0e0] placeholder-[#555] py-4 pb-12 px-3 focus:ring-0 resize-none h-[120px] overflow-y-auto font-normal tracking-wide leading-relaxed"
-                          placeholder="메시지를 입력하세요..."
-                          rows="1">
-                </textarea>
+                @*
+                    [+] 패널 — 카톡의 '+' 서랍에 해당합니다.
+                    @if로 지우지 않고 hidden 클래스로만 숨기는 이유:
+                    ModeSwitcher는 Shift+Tab(JS → CycleMode)에서 @ref로 호출되는데,
+                    @if로 제거하면 참조가 null이 되어 단축키가 터집니다.
+                    display:none으로 숨기면 컴포넌트는 살아 있어 참조가 유지됩니다.
+                *@
+                @*
+                    패널 배경은 일부러 기존 다크(ue-panel)로 두었습니다.
+                    안에 들어가는 ModelSelector / ThinkingToggle / EffortSelector / ModeSwitcher가
+                    모두 다크 배경 기준 색을 쓰기 때문에, 밝은 면 위에 올리면 글자가 보이지 않습니다.
+                    카톡의 '+' 서랍도 본문과 구분되는 별도 면이라 이질감은 없습니다.
+                *@
+                <div class="@(bShowPanel ? "" : "hidden") mb-2 p-2.5 rounded-xl bg-ue-panel border border-ue-border shadow-lg
+                            flex flex-wrap items-center gap-3">
+                    <ModelSelector />
 
-                <!-- 하단 바: textarea 위에 떠 있는 전송 버튼 영역입니다. -->
-                <div class="flex items-center justify-between px-2 pb-2 absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#151515] via-[#151515] to-transparent pt-4">
-
-                    <!-- 하단바 좌측 -->
-                    <div class="flex items-center gap-2 pointer-events-auto">
-                        <!-- 모델 선택 -->
-                        <ModelSelector />
+                    <div class="flex items-center gap-3 bg-[#1a1a1a] px-2 py-1 rounded-lg border border-ue-border">
+                        <ThinkingToggle />
+                        <div class="h-3 w-px bg-ue-border"></div>
+                        <EffortSelector />
                     </div>
-                    
-                    <!-- 우측: Thinking 토글, Effort 선택, 전송 버튼입니다. -->
-                    <div class="flex items-center gap-3 pointer-events-auto">
-                        
-                        <!-- Thinking 선택 -->
-                        <div class="flex items-center gap-3 bg-[#1a1a1a] px-2 py-1 rounded-sm border border-[#333]">
-                            <ThinkingToggle/>
-                            <div class="h-3 w-px bg-[#333]"></div>
-                            <EffortSelector />
-                        </div>
+                </div>
 
-                        <!-- 전송 버튼: 클릭 또는 Enter로 메시지를 보냅니다. -->
-                        <button type="submit"
-                                class="flex items-center justify-center size-7 rounded-sm transition-all active:scale-95 bg-[#0070e0] hover:bg-[#0060c0] text-white shadow-[0_0_10px_rgba(0,112,224,0.3)] active:shadow-inner">
-                            <span class="material-symbols-outlined text-[18px]">arrow_upward</span>
-                        </button>
-                    </div>
+                <!-- 입력 한 줄 : [+]  [입력창]  [전송] -->
+                <div class="flex items-end gap-2">
+
+                    <!-- [+] 버튼 : 위 패널을 여닫습니다. -->
+                    <button type="button" @onclick="TogglePanel"
+                            class="shrink-0 flex items-center justify-center size-9 rounded-full transition-all active:scale-95
+                                   @(bShowPanel ? "bg-kk-chip-hover text-kk-text rotate-45" : "bg-kk-chip text-kk-icon hover:bg-kk-chip-hover")">
+                        <span class="material-symbols-outlined text-[22px]">add</span>
+                    </button>
+
+                    <!-- 텍스트 입력 : 내용에 따라 높이가 늘어납니다 (JS의 setupAutoGrow). -->
+                    <textarea @ref="TextAreaRef"
+                              @bind="InputText"
+                              @bind:event="oninput"
+                              class="flex-1 min-w-0 bg-kk-chip rounded-2xl border border-transparent
+                                     text-[14px] text-kk-text placeholder-kk-icon
+                                     px-4 py-2.5 focus:ring-0 focus:outline-none focus:border-kk-line
+                                     resize-none min-h-[40px] max-h-[160px] overflow-y-auto
+                                     leading-relaxed transition-colors"
+                              placeholder="메시지를 입력하세요..."
+                              rows="1">
+                    </textarea>
+
+                    <!-- 전송 버튼 : 입력이 있을 때만 카카오 노란색으로 활성화됩니다. -->
+                    <button type="submit"
+                            class="shrink-0 flex items-center justify-center size-9 rounded-full transition-all active:scale-95
+                                   @(bHasText ? "bg-kk-send text-kk-send-fg hover:brightness-95" : "bg-kk-chip text-kk-icon")">
+                        <span class="material-symbols-outlined text-[20px]">arrow_upward</span>
+                    </button>
                 </div>
             </div>
         </form>
-        
-        <!-- 모드 스위처입니다. -->
-        <ModeSwitcher @ref="ModeSwitcherRef" />
+
+        @*
+            모드 스위처는 Shift+Tab으로 실시간 전환되는 것을 눈으로 확인해야 하므로
+            [+] 서랍에 넣지 않고 입력창 바로 아래에 항상 표시합니다.
+            (form 바깥이라 Enter 제출과도 무관합니다.)
+        *@
+        <div class="mt-2 pl-11">
+            <ModeSwitcher @ref="ModeSwitcherRef" />
+        </div>
     </div>
 </div>

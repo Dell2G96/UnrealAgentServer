@@ -32,21 +32,22 @@ public partial class ModeSwitcher : ComponentBase
     }
     
     // 모드별 도트 색상 클래스 반환
+    // 흰 입력바 위에 놓이므로, 밝은 배경에서도 대비가 나오는 진한 톤을 쓴다.
     private static string DotColor(AgentMode Mode, bool bIsActive) => Mode switch
     {
-        AgentMode.Normal => bIsActive ? "bg-[#94a3b8]" : "bg-[#94a3b8]/50",
-        AgentMode.Edit   => bIsActive ? "bg-[#a855f7]" : "bg-[#a855f7]/50",
-        AgentMode.Plan   => bIsActive ? "bg-[#22c55e]" : "bg-[#22c55e]/50",
-        _                => "bg-[#94a3b8]/50"
+        AgentMode.Normal => bIsActive ? "bg-[#475569]" : "bg-[#94a3b8]/60",
+        AgentMode.Edit   => bIsActive ? "bg-[#9333ea]" : "bg-[#94a3b8]/60",
+        AgentMode.Plan   => bIsActive ? "bg-[#16a34a]" : "bg-[#94a3b8]/60",
+        _                => "bg-[#94a3b8]/60"
     };
 
     /// <summary>모드별 텍스트 색상 클래스를 반환합니다.</summary>
     private static string TextColor(AgentMode Mode, bool bIsActive) => Mode switch
     {
-        AgentMode.Normal => bIsActive ? "text-[#cbd5e1]" : "text-[#94a3b8]",
-        AgentMode.Edit   => bIsActive ? "text-[#a855f7]" : "text-[#94a3b8]",
-        AgentMode.Plan   => bIsActive ? "text-[#22c55e]" : "text-[#94a3b8]",
-        _                => "text-[#94a3b8]"
+        AgentMode.Normal => bIsActive ? "text-[#334155]" : "text-[#8a97a4]",
+        AgentMode.Edit   => bIsActive ? "text-[#9333ea]" : "text-[#8a97a4]",
+        AgentMode.Plan   => bIsActive ? "text-[#16a34a]" : "text-[#8a97a4]",
+        _                => "text-[#8a97a4]"
     };
     
 }

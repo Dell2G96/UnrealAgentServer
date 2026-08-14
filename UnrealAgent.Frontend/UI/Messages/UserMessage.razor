@@ -1,19 +1,20 @@
-<!-- 유저 메시지 (우측 정렬)입니다. -->
-<div class="flex flex-row-reverse gap-4 max-w-5xl mx-auto w-full z-10 msg-enter">
-    <div class="size-8 shrink-0 rounded bg-[#222] flex items-center justify-center border border-[#444] shadow-md mt-1">
-        <span class="material-symbols-outlined text-[#aaa] text-[16px]">person</span>
-    </div>
-    <div class="flex flex-col gap-4 items-end w-full">
-        <div class="flex items-baseline gap-2">
-            <span class="text-[10px] text-[#555] font-sans">@Message.Timestamp.ToString("h:mm tt")</span>
-            <span class="text-xs font-bold text-[#e0e0e0] tracking-wide">You</span>
-        </div>
-        
-        @if (!string.IsNullOrWhiteSpace(Message.Content))
-        {
-            <div class="text-[13px] text-[#ccc] leading-relaxed text-right bg-gradient-to-l from-[#1a1a1a] to-transparent py-1 pl-4 rounded-l max-w-3xl w-full font-normal tracking-wide">
+<!-- 유저 메시지 — 카카오톡 '내 말풍선' (우측 정렬, 노란색, 아바타 없음) -->
+<div class="flex justify-end max-w-5xl mx-auto w-full z-10 msg-enter">
+
+    @if (!string.IsNullOrWhiteSpace(Message.Content))
+    {
+        <!-- items-end : 시각을 말풍선 아래쪽 선에 맞춘다 (카톡과 동일) -->
+        <div class="flex items-end gap-1.5 max-w-[75%]">
+
+            <span class="text-[11px] text-kk-time shrink-0 pb-0.5">
+                @ChatTimeFormat.ToKakaoTime(Message.Timestamp)
+            </span>
+
+            <!-- kk-bubble-mine : 말풍선 오른쪽 위에 붙는 꼬리 (app.css) -->
+            <div class="kk-bubble kk-bubble-mine bg-kk-mine text-kk-text text-[14px] leading-relaxed
+                        px-3 py-2 rounded-xl whitespace-pre-wrap break-words">
                 @Message.Content
             </div>
-        }
-    </div>
+        </div>
+    }
 </div>
