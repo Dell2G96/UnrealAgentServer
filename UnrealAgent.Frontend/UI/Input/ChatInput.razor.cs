@@ -11,8 +11,6 @@ public partial class ChatInput :JsComponentBase
     // 메세지 전송 콜백
     [Parameter] public EventCallback<UserInput> OnSend { get; set; }
     
-
-    
     // textarea 요소 참조
     private ElementReference TextAreaRef;
     
@@ -25,12 +23,9 @@ public partial class ChatInput :JsComponentBase
     // 커맨드 팝업 참조
     private CommandPopup CmdPopup = null!;
     
-    // [+] 패널(모델/Thinking/Effort/모드)이 펼쳐져 있는지 여부
-    private bool bShowPanel;
-
-    // 전송 버튼을 노란색으로 활성화할지 판단한다
-    private bool bHasText => !string.IsNullOrWhiteSpace(InputText);
-
+    // 멘션 팝업 참조
+    private MentionPopup MenPopup = null!;
+    
     // textarea 바인딩 값, 변경 시 커맨드 팝업을 갱신
     // 현재 입력 텍스트
     private string InputText
@@ -40,10 +35,16 @@ public partial class ChatInput :JsComponentBase
         {
             field = value;
             CmdPopup.Update(value);
+            MenPopup.Update(value);
         }
     } = "";
+    
+    // [+] 패널(모델/Thinking/Effort/모드)이 펼쳐져 있는지 여부
+    private bool bShowPanel;
 
-
+    // 전송 버튼을 노란색으로 활성화할지 판단한다
+    private bool bHasText => !string.IsNullOrWhiteSpace(InputText);
+    
     // [+] 버튼 : 패널을 여닫는다
     private void TogglePanel() => bShowPanel = !bShowPanel;
 
@@ -83,7 +84,72 @@ public partial class ChatInput :JsComponentBase
     [JSInvokable]
     public void PopupClose() => CmdPopup.Close();
     
-    // 폼 제출 시 메세지 전송
+    
+    ///////////////////////////////////////////////////////////////////////////
+    ///  멘션 팝업 
+    ///////////////////////////////////////////////////////////////////////////
+    
+    // 멘션 팝업에서 방향키로 항목을 탐색한다.
+    [JSInvokable]
+    public async Task MentionNavigate(int Direction) => await MenPopup.Navigate(Direction);
+    
+    // 멘션 팝업에서 Enter로 최종 선택
+    [JSInvokable]
+    public void MentionSelect()
+    {
+        string? Path = MenPopup.Select();
+        if (Path is null)
+            return;
+
+        int AtIndex = InputText.LastIndexOf('@');
+        if (AtIndex < 0)
+            return;
+
+        InputText = InputText[..AtIndex] + Path + " ";
+        
+        StateHasChanged();
+    }
+    
+    /// <summary>멘션 팝업에서 Tab으로 드릴다운/선택합니다.</summary>
+    [JSInvokable]
+    public void MentionTab()
+    {
+        string? Result = MenPopup.Tab();
+        if (Result is null) 
+            return;
+
+        int AtIndex = InputText.LastIndexOf('@');
+        if (AtIndex < 0) 
+            return;
+
+        InputText = Result.EndsWith('/')
+            ? InputText[..AtIndex] + "@" + Result
+            : InputText[..AtIndex] + Result + " ";
+        
+        StateHasChanged();
+    }
+    
+    /// <summary>멘션 팝업에서 ← 키로 상위 이동합니다.</summary>
+    [JSInvokable]
+    public void MentionGoBack()
+    {
+        string? Result = MenPopup.GoBack();
+        if (Result is null) 
+            return;
+
+        int AtIndex = InputText.LastIndexOf('@');
+        if (AtIndex < 0) 
+            return;
+
+        InputText = InputText[..AtIndex] + "@" + Result;
+        StateHasChanged();
+    }
+
+    /// <summary>멘션 팝업을 닫습니다.</summary>
+    [JSInvokable]
+    public void MentionClose() => MenPopup.Close();
+
+    /// <summary>폼 제출 시 메시지를 전송합니다.</summary>
     private async Task HandleSubmit()
     {
         string Trimmed = InputText.Trim();
@@ -92,12 +158,12 @@ public partial class ChatInput :JsComponentBase
             return;
 
         InputText = "";
-
         // 늘어나 있던 textarea 높이를 한 줄로 되돌린다.
         // Module은 첫 렌더 이후에만 채워지므로 null 검사를 함께 한다.
         if (Module is not null)
             await Module.InvokeVoidAsync("resetHeight", TextAreaRef);
 
-        await OnSend.InvokeAsync(Trimmed);
-    }
+        await OnSend.InvokeAsync(Trimmed);    }
+    
+    
 }
