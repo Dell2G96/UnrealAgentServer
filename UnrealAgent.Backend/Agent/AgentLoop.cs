@@ -5,6 +5,7 @@ using UnrealAgent.Backend.Conversation;
 using UnrealAgent.Backend.Chat;
 using UnrealAgent.Backend.Prompt;
 using UnrealAgent.Backend.Security;
+using UnrealAgent.Backend.Token;
 using UnrealAgent.Backend.Tool;
 using Block = UnrealAgent.Backend.Core.Block;
 
@@ -14,12 +15,15 @@ namespace UnrealAgent.Backend.Agent;
 /// 에이전트 루프
 /// 클로드 API 스트리믕 -> 도구 실행을 반복하며, 모든 지능은 모델에 위임
 /// </summary>
-public sealed class AgentLoop(PromptBuilder PromptBuilder, ToolExecutor ToolExecutor, AuthConfig Auth)
+public sealed class AgentLoop(PromptBuilder PromptBuilder, ToolExecutor ToolExecutor, AuthConfig Auth, TokenTracker TokenTracker)
 {
     // 사용자 메세지 1건에 대한 에이전트 루프를 실행
     // 호출 1회가 MessageSpan 1개에 대응하며, 모델이 도구를 사용할 때 마다 내부에서 API 를 반복 하출한다
     public async IAsyncEnumerable<ChatEvent> RunAsync(UserInput Input, AgentSession Session, [EnumeratorCancellation] CancellationToken Ct = default)
     {
+        // 시스템 프롬프트/도구 스키마의 고정 토큰을 측정
+        await TokenTracker.MeasureAsync();
+        
         // 대화 히스토리에 사용자 입력 추가
         MessageSpan CurrentMessageSpan = Session.Conversation.AddMessageSpan(Input);
         

@@ -188,6 +188,7 @@ public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings Model
         ModeOverride     = 1 << 6,
         UnrealAgentMd    = 1 << 7,
         Skills           = 1 << 8,
+        All              = Identity | System | DoingTasks | Proactiveness | ToneAndStyle | OutputEfficiency | ModeOverride | UnrealAgentMd | Skills,
     }
     
     // ── API 파라미터 생성 ──
@@ -224,7 +225,13 @@ public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings Model
     {
         return BuildInternal(Section.None, Session);
     }
+
+    // 지정한 섹션을 제외한 시스템 프롬프트를 생성
+    public string BuildWithout(Section Skip, AgentSession? Session = null) => BuildInternal(Skip, Session);
     
+    // 지정한 섹션만 포함한 시스템 프롬프트를 생성
+    public string BuildOnly(Section Include, AgentSession? Session = null) =>
+        BuildInternal(Section.All & ~Include, Session);
     
     /// <summary>각 섹션 메서드를 호출하고 결과를 결합하여 프롬프트 문자열을 생성합니다.</summary>
     private string BuildInternal(Section Skip, AgentSession? Session)

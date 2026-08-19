@@ -16,4 +16,7 @@ public sealed record AssistantSpan
     
     // 도구 실행 결과 목록 , 도구 호출이 없으면 비어 있다
     public List<ToolExecution> ToolExecutions { get; } = [];
+    
+    // API 호출의 입력 토큰 수
+    public long InputTokens { get; init; }
 }

@@ -11,6 +11,10 @@ public partial class ChatInput :JsComponentBase
     // 메세지 전송 콜백
     [Parameter] public EventCallback<UserInput> OnSend { get; set; }
     
+    // 현재 컨텍스트 토큰 수 
+    // TokenMeter에 전달
+    [Parameter] public long ContextTokens { get; set; } 
+    
     // textarea 요소 참조
     private ElementReference TextAreaRef;
     
@@ -38,8 +42,10 @@ public partial class ChatInput :JsComponentBase
             MenPopup.Update(value);
         }
     } = "";
-    
-    // [+] 패널(모델/Thinking/Effort/모드)이 펼쳐져 있는지 여부
+
+    #region 카카오톡 '+' 버튼을 통한 추가 옵션 설정
+
+    // [+] 패널(Thinking/Effort)이 펼쳐져 있는지 여부
     private bool bShowPanel;
 
     // 전송 버튼을 노란색으로 활성화할지 판단한다
@@ -49,6 +55,9 @@ public partial class ChatInput :JsComponentBase
     private void TogglePanel() => bShowPanel = !bShowPanel;
 
 
+    #endregion
+    
+    
     // JS 모듈 로드 후 Enter 키 바인딩 설정
     protected override async Task OnModuleLoaded()
     {
@@ -88,7 +97,6 @@ public partial class ChatInput :JsComponentBase
     ///////////////////////////////////////////////////////////////////////////
     ///  멘션 팝업 
     ///////////////////////////////////////////////////////////////////////////
-    
     // 멘션 팝업에서 방향키로 항목을 탐색한다.
     [JSInvokable]
     public async Task MentionNavigate(int Direction) => await MenPopup.Navigate(Direction);

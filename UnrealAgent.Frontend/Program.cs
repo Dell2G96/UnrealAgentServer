@@ -56,6 +56,7 @@ using UnrealAgent.Backend.Model;
 using UnrealAgent.Backend.Model.Models;
 using UnrealAgent.Backend.Prompt;
 using UnrealAgent.Backend.Skill;
+using UnrealAgent.Backend.Token;
 using UnrealAgent.Backend.Tool;
 using UnrealAgent.Backend.Tool.Tools;
 using UnrealAgent.Frontend.Infrastructure;
@@ -89,6 +90,7 @@ Builder.Services.AddHostedService(Sp => Sp.GetRequiredService<AgentRunner>());
 
 // ── Runtime 모듈 ──
 Builder.Services.AddSingleton<PromptBuilder>();
+Builder.Services.AddSingleton<TokenTracker>();
 
 // ── Tool 모듈 ──
 Builder.Services.AddSingleton<ToolRegistry>();

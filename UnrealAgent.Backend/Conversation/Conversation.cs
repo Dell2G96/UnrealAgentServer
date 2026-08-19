@@ -13,6 +13,10 @@ public sealed class Conversation
 
     // 메세지 구간(사용자 1턴) 목록
     private readonly List<MessageSpan> MessageSpans = [];
+    
+    // 마지막 AssistantSpan의 입력 토큰 수 
+    // 현재 컨텍스트 윈도우 사용량을 나타낸다.
+    public long ContextTokens => MessageSpans.SelectMany(E => E.AssistantSpans).LastOrDefault()?.InputTokens ?? 0;
 
     // 26.05.11 - Claude/OpenAI 양쪽에서 동일한 대화 히스토리를 변환할 수 있도록 읽기 전용 노출
     public IReadOnlyList<MessageSpan> Spans => MessageSpans;
@@ -82,19 +86,19 @@ public sealed class Conversation
         {
             switch (Block)
             {
-                case Core.Block.Text { Content : { } Content }:
+                case Block.Text { Content : { } Content }:
                 {
                     ContentBlocks.Add(new TextBlockParam { Text = Content });
                     break;
                 }
 
-                case Core.Block.Thinking { Content : { } Content, Signature: { } Signature }:
+                case Block.Thinking { Content : { } Content, Signature: { } Signature }:
                 {
                     ContentBlocks.Add(new ThinkingBlockParam { Thinking = Content, Signature = Signature });
                     break;
                 }
 
-                case Core.Block.ToolUse { Id : { } Id, Name : { } Name, InputJson: { } InputJson }:
+                case Block.ToolUse { Id : { } Id, Name : { } Name, InputJson: { } InputJson }:
                 {
                     Dictionary<string, JsonElement> ParsedInput = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(InputJson) ?? new Dictionary<string, JsonElement>();
                     

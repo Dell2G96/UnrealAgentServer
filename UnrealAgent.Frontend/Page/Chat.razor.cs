@@ -10,6 +10,9 @@ public partial class Chat : IAsyncDisposable
     // 에이전트 실행 서비스
     [Inject] private AgentRunner AgentRunner { get; set; } = null!;
     
+    // 에이전트 세션
+    [Inject] private AgentSession AgentSession { get; set; } = null!;
+    
     // 설정 패널 표시 여부
     private bool bShowSettings;
 
