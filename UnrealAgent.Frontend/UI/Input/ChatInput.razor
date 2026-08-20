@@ -12,9 +12,15 @@
 
                 <!-- 커맨드 팝업입니다. -->
                 <CommandPopup @ref="CmdPopup" />
-                
+
                 <!-- 멘션 팝업입니다. -->
                 <MentionPopup @ref="MenPopup" />
+
+                <!-- 첨부 이미지 미리보기. -->
+                <ImagePreview ImageMediaType="@(ImagePickerRef?.ImageMediaType)"
+                              ImageBase64="@(ImagePickerRef?.ImageBase64)"
+                              OnRemove="ClearImage" />
+
 
                 @*
                     [+] 패널 — Thinking과 Effort 설정을 담는 카톡식 서랍입니다.
@@ -76,7 +82,13 @@
         <!-- 입력창 아래 하단바: 좌측 모델/토큰 사용량, 우측 모드 선택 -->
         <div class="mt-2 pl-11 flex items-center justify-between gap-3">
             <div class="flex items-center gap-2">
+                <!--모델 선택 -->
                 <ModelSelector />
+
+                <!-- 이미지 첨부 -->
+                <ImagePicker @ref="ImagePickerRef" OnChanged="() => StateHasChanged()" />
+
+                <!-- 토큰 표시기 -->
                 <TokenMeter ContextTokens="@ContextTokens" />
             </div>
 

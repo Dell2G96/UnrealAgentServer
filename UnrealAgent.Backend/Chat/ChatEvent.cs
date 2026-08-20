@@ -6,7 +6,7 @@ namespace UnrealAgent.Backend.Chat;
 public abstract record ChatEvent
 {
     // 사용자 메세지
-    public sealed record User(string Content) : ChatEvent;
+    public sealed record User(string Content, string? ImageMediaType = null, string? ImageBase64 = null) : ChatEvent;
     
     //클로드의 텍스트 응답
     public sealed record Assistant(string Content) : ChatEvent;

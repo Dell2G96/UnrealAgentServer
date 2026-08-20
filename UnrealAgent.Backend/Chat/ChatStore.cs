@@ -23,9 +23,14 @@ public sealed class ChatStore
 
         switch (Evt)
         {
-            case ChatEvent.User { Content: var Content }:
+            case ChatEvent.User
             {
-                Messages.Add(new ChatUIMessage.User(Content));
+                Content: var Content,
+                ImageMediaType: var MediaType,
+                ImageBase64: var Base64
+            }:
+            {
+                Messages.Add(new ChatUIMessage.User(Content, MediaType, Base64));
                 
                 break;
             }

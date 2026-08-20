@@ -69,12 +69,39 @@ public sealed class Conversation
      */
     private static MessageParam ConvertUserInput(UserInput Input)
     {
-        List<ContentBlockParam> Blocks = new List<ContentBlockParam>();
+        List<ContentBlockParam> Blocks = [];
 
+        // 이미지 블록을 먼저 추가 , Claude가 이미지를 먼저 인식하도록
+        if (Input.HasImage)
+        {
+            Blocks.Add(new ImageBlockParam
+            {
+                Source = new Base64ImageSource
+                {
+                    MediaType = Input.ImageMediaType!,
+                    Data = Input.ImageBase64!
+                }
+            });
+        }
+
+        // Anthropic API는 빈 텍스트 블록을 허용하지 않는다.
         if (!string.IsNullOrWhiteSpace(Input.Text))
-            Blocks.Add(new TextBlockParam { Text = Input.Text });
+        {
+            Blocks.Add(new TextBlockParam
+            {
+                Text = Input.Text
+            });
+        }
 
-        return new MessageParam { Role = Role.User, Content = Blocks };
+        // UI에서 차단하더라도 잘못된 입력이 API까지 전달되지 않도록 방어한다.
+        if (Blocks.Count == 0)
+            throw new InvalidOperationException("사용자 메시지에는 텍스트 또는 이미지가 필요합니다.");
+
+        return new MessageParam
+        {
+            Role = Role.User,
+            Content = Blocks
+        };
     }
 
     // 도메인 Block 목록을 안트로픽 API 어시스턴트 메시지로 반환
@@ -110,7 +137,7 @@ public sealed class Conversation
         return new MessageParam { Role = Role.Assistant, Content = ContentBlocks };
     }
     // 도구 실행 결과를 안트로픽 API user 메세지(ToolResult) 로 변환
-    private MessageParam ConvertToolResults(List<AssistantSpan.ToolExecution> Executions)
+    private MessageParam ConvertToolResults(IReadOnlyList<AssistantSpan.ToolExecution> Executions)
     {
         List<ContentBlockParam> ResultBlocks = Executions.Select(E => (ContentBlockParam)new ToolResultBlockParam
         {

@@ -39,7 +39,7 @@ public sealed class AgentRunner(AgentSession Session) : BackgroundService
     public async Task EnqueueMessage(UserInput Input)
     {
         // 사용자 메시지 UI를 위해 추가
-        await DispatchEventAsync(new ChatEvent.User(Input.Text)); 
+        await DispatchEventAsync(new ChatEvent.User(Input.Text, Input.ImageMediaType, Input.ImageBase64)); 
         
         MessageQueue.Enqueue(Input);
         Signal.Release();

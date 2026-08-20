@@ -1,20 +1,37 @@
 <!-- 유저 메시지 — 카카오톡 '내 말풍선' (우측 정렬, 노란색, 아바타 없음) -->
 <div class="flex justify-end max-w-5xl mx-auto w-full z-10 msg-enter">
+    <div class="flex flex-col items-end gap-1.5 max-w-[75%]">
 
-    @if (!string.IsNullOrWhiteSpace(Message.Content))
-    {
-        <!-- items-end : 시각을 말풍선 아래쪽 선에 맞춘다 (카톡과 동일) -->
-        <div class="flex items-end gap-1.5 max-w-[75%]">
+        @if (!string.IsNullOrWhiteSpace(Message.ImageMediaType) &&
+             !string.IsNullOrWhiteSpace(Message.ImageBase64))
+        {
+            <img src="data:@Message.ImageMediaType;base64,@Message.ImageBase64"
+                 class="max-w-xs max-h-48 rounded border border-[#333] shadow-md object-contain"
+                 alt="첨부 이미지" />
+        }
 
-            <span class="text-[11px] text-kk-time shrink-0 pb-0.5">
+        @if (!string.IsNullOrWhiteSpace(Message.Content))
+        {
+            <!-- items-end : 시각을 말풍선 아래쪽 선에 맞춘다 (카톡과 동일) -->
+            <div class="flex items-end gap-1.5">
+
+                <span class="text-[11px] text-kk-time shrink-0 pb-0.5">
+                    @ChatTimeFormat.ToKakaoTime(Message.Timestamp)
+                </span>
+
+                <!-- kk-bubble-mine : 말풍선 오른쪽 위에 붙는 꼬리 (app.css) -->
+                <div class="kk-bubble kk-bubble-mine bg-kk-mine text-kk-text text-[14px] leading-relaxed
+                            px-3 py-2 rounded-xl whitespace-pre-wrap break-words">
+                    @Message.Content
+                </div>
+            </div>
+        }
+        else if (!string.IsNullOrWhiteSpace(Message.ImageBase64))
+        {
+            <!-- 이미지만 보낸 경우에도 전송 시각을 표시한다. -->
+            <span class="text-[11px] text-kk-time">
                 @ChatTimeFormat.ToKakaoTime(Message.Timestamp)
             </span>
-
-            <!-- kk-bubble-mine : 말풍선 오른쪽 위에 붙는 꼬리 (app.css) -->
-            <div class="kk-bubble kk-bubble-mine bg-kk-mine text-kk-text text-[14px] leading-relaxed
-                        px-3 py-2 rounded-xl whitespace-pre-wrap break-words">
-                @Message.Content
-            </div>
-        </div>
-    }
+        }
+    </div>
 </div>

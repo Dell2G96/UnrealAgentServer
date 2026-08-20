@@ -31,21 +31,6 @@
 
 #endregion
 
-// using Anthropic.Models.Messages;
-// using Microsoft.Extensions.DependencyInjection;
-// using UnrealAgent.Backend.Agent;
-// using UnrealAgent.Backend.Auth;
-// using UnrealAgent.Backend.Conversation;
-// using UnrealAgent.Backend.Core;
-//
-// using UnrealAgent.Backend.Prompt;
-// using UnrealAgent.Backend.Tool;
-// using UnrealAgent.Backend.Tool.Tools;
-//
-// using Block = UnrealAgent.Backend.Core.Block;
-// using UnrealAgent.Backend.Llm;
-
-
 using UnrealAgent.Backend.Agent;
 using UnrealAgent.Backend.Agent.Middleware;
 using UnrealAgent.Backend.Auth;
@@ -72,6 +57,9 @@ Builder.WebHost.UseStaticWebAssets();
 
 // ── Blazor 서비스 등록 (Razor 컴포넌트 + 서버 측 인터랙티브 모드) ──
 Builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+
+// ── SignalR 메세지 크기 제한 (이미지 Base64 전송을 위해 최대크기  확장)
+Builder.Services.AddSignalR(Options => Options.MaximumReceiveMessageSize = 30 * 1024 * 1024);
 
 // ── HTTP 클라이언트 등록 (외부 API 호출용) ──
 Builder.Services.AddHttpClient("OAuth", C => C.Timeout = TimeSpan.FromSeconds(30));

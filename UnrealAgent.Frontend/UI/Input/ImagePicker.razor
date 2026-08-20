@@ -1,0 +1,10 @@
+@inherits JsComponentBase
+
+<button type="button"
+        @onclick="Pick"
+        class="relative group p-1.5 text-[#666] hover:text-[#0070e0]
+        transition-colors rounded hover:bg-[#222]">
+        <span class ="material-symbols-outlined text-[18px]">attach_file</span>
+</button>
+
+<input type = "file" @ref="FileInputRef" accept="image/*" style="display:none" />

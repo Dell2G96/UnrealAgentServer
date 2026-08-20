@@ -29,6 +29,9 @@ public partial class ChatInput :JsComponentBase
     
     // 멘션 팝업 참조
     private MentionPopup MenPopup = null!;
+
+    // 이미지 첨부 컴포너트 참조 , 첫 렌더 전에는 null 이다
+    private ImagePicker? ImagePickerRef;
     
     // textarea 바인딩 값, 변경 시 커맨드 팝업을 갱신
     // 현재 입력 텍스트
@@ -161,17 +164,31 @@ public partial class ChatInput :JsComponentBase
     private async Task HandleSubmit()
     {
         string Trimmed = InputText.Trim();
+        bool bHasImage =
+            !string.IsNullOrWhiteSpace(ImagePickerRef?.ImageMediaType) &&
+            !string.IsNullOrWhiteSpace(ImagePickerRef?.ImageBase64);
 
-        if (string.IsNullOrEmpty(Trimmed))
+        if (string.IsNullOrEmpty(Trimmed) && !bHasImage)
             return;
 
+        UserInput Input = new(Trimmed, ImagePickerRef?.ImageMediaType, ImagePickerRef?.ImageBase64);
+
         InputText = "";
+
+        await ClearImage();
+
         // 늘어나 있던 textarea 높이를 한 줄로 되돌린다.
         // Module은 첫 렌더 이후에만 채워지므로 null 검사를 함께 한다.
         if (Module is not null)
             await Module.InvokeVoidAsync("resetHeight", TextAreaRef);
 
-        await OnSend.InvokeAsync(Trimmed);    }
-    
-    
+        await OnSend.InvokeAsync(Input);
+    }
+
+    /// <summary>선택한 이미지를 입력창에서 제거합니다.</summary>
+    private async Task ClearImage()
+    {
+        if (ImagePickerRef is not null)
+            await ImagePickerRef.Clear();
+    }
 }
