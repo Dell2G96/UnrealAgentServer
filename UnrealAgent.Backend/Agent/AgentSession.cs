@@ -16,6 +16,9 @@ public sealed class AgentSession(AgentLoop Loop, SlashCommandMiddleware SlashCom
     // 세션의 대화 히스토리
     public Conversation.Conversation Conversation { get; } = new();
     
+    // 팀 정보
+    public Team.Team Team { get; } = new();
+    
     // 이 세션의 도구 실행 권한 엔진
     public PermissionEngine PermissionEngine { get; } = new();
     

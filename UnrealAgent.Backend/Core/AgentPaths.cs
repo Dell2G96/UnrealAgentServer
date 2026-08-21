@@ -5,7 +5,9 @@ public static class AgentPaths
 {
     public static readonly string UserConfigDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".unrealagent");
     
-    // 프로젝트 경로 ------------------------------------------------------
+    ///////////////////////////////////////////////////////////////////////////
+    // 프로젝트 경로 
+    ///////////////////////////////////////////////////////////////////////////
 
     /// UE 프로젝트 루트 경로
     public static string RootPath { get; } = string.Empty;
@@ -20,9 +22,23 @@ public static class AgentPaths
     // ({ConfigDir}/skills)
     public static string SkillsDir => Path.Combine(ConfigDir, "skills");
     
+    ///////////////////////////////////////////////////////////////////////////
+    /// 팀 경로
+    ///////////////////////////////////////////////////////////////////////////
+
+    // 전체 팀 루트 디렉토리
+    public static string TeamsRoot => Path.Combine(ConfigDir, "teams");
+    
+    // 특정 팀의 디렉토리 경로를 반환한다.
+    public static string GetTeamDir(string TeamName) => Path.Combine(TeamsRoot, TeamName);
+    
+    // 팀 메일박스 디렉토리 경로르 반환한다.
+    public static string GetMailboxDir(string TeamName) => Path.Combine(GetTeamDir(TeamName), "mailbox");
     
     
-    // 초기화---------------------------------------------------------------------
+    ///////////////////////////////////////////////////////////////////////////
+    // 초기화
+    ///////////////////////////////////////////////////////////////////////////
     static AgentPaths()
     {
         // UE가 실행 시 --project-dir 인자로 프로젝트 경로를 넘겨준다.

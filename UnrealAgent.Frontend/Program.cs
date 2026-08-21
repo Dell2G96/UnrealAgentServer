@@ -46,11 +46,27 @@ using UnrealAgent.Backend.Tool;
 using UnrealAgent.Backend.Tool.Tools;
 using UnrealAgent.Frontend.Infrastructure;
 
-WebApplicationBuilder Builder = WebApplication.CreateBuilder(args);
+
+///////////////////////////////////////////////////////////////////////////////
+/// 커맨드라인 인자에서 포트 파싱 (팀원일 때)
+///////////////////////////////////////////////////////////////////////////////
+int Port = 55558;
+
+for (int i = 0; i < args.Length - 1; i++)
+{
+    if (args[i] == "--port")
+    {
+        Port = int.Parse(args[i + 1]);
+        break;
+    }
+}
+
+
 // ── WebApplicationBuilder (서비스 등록 + 앱 설정을 담는 빌더) 생성 ──
+WebApplicationBuilder Builder = WebApplication.CreateBuilder(args);
 
 // ── Kestrel (요청을 받아서 넘겨주는 서버 엔진) 포트 설정 ──
-Builder.WebHost.UseUrls("http://localhost:55558");
+Builder.WebHost.UseUrls($"http://localhost:{Port}");
 
 // ── 정적 웹 자산 강제 로드 ──
 Builder.WebHost.UseStaticWebAssets();
@@ -109,6 +125,9 @@ App.Services.GetRequiredService<CommandRegistry>().DiscoverCommands(typeof(Clear
 
 // ── 스킬 파일시스템 스캔 ──
 App.Services.GetRequiredService<SkillRegistry>().DiscoverSkills();
+
+// ── 팀 인자 파싱 ( 팀원 모드일 때 TeamName, AgentName, ParentPid 설정 ──
+App.Services.GetRequiredService<AgentSession>().Team.ParseArgs(args);
 
 // ── Auth 설정 로드 ──
 App.Services.GetRequiredService<AuthConfig>().Load();
