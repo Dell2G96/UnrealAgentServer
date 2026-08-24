@@ -7,7 +7,7 @@ namespace UnrealAgent.Backend.Security;
 /// <summary>
 /// 도구 실행 권한 엔진
 /// </summary>
-public sealed class PermissionEngine
+public sealed class PermissionEngine(Team.Team Team)
 {
     // 항상 허용 되는 도구 이름 집합
     private readonly HashSet<string> AllowedTools = new(StringComparer.OrdinalIgnoreCase);
@@ -18,6 +18,10 @@ public sealed class PermissionEngine
     // 도구 호출의 실행 권한을 조회한다
     public Task<ToolPermission> GetPermissionAsync(Block.ToolUse ToolCall, AgentMode Mode)
     {
+        // 팀원 모드는 모든 도구 허용
+        if (Team.ParentPid is not null)
+            return Task.FromResult(ToolPermission.Allow);
+            
         // Edit 모드 확인
         if (Mode == AgentMode.Edit)
             return Task.FromResult(ToolPermission.Allow);
@@ -30,5 +34,4 @@ public sealed class PermissionEngine
         return Task.FromResult(ToolPermission.Ask);
     }
 
-    //
 }

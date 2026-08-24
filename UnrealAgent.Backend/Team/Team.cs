@@ -53,7 +53,7 @@ public sealed class Team : IAsyncDisposable
     }
     
     // 팀 전체를 삭제한다.
-    private async Task DeleteTeamAsync()
+    public async Task DeleteTeamAsync()
     {
         if (TeamName is null)
             return;
@@ -140,10 +140,10 @@ public sealed class Team : IAsyncDisposable
     ///////////////////////////////////////////////////////////////////////////
 
     // 특정 팀원에게 메세지를 보냄
-    private async Task SendMessageAsync(string To, MessageType Type, string Content)
+    public async Task SendMessageAsync(string To, MessageType Type, string Content)
     {
         if (TeamName is null)
-            return;
+            throw new InvalidOperationException("No active Team.");
 
         string? MailboxDir = AgentPaths.GetMailboxDir(TeamName);
         TeamMessage Message = new(AgentName, Type, Content, DateTime.UtcNow);
@@ -172,7 +172,7 @@ public sealed class Team : IAsyncDisposable
         return Process.Start(new ProcessStartInfo
         {
           FileName  = ExePath,
-          Arguments = $"--team-name \"{TeamName}\" --agent--name \"{Name}\" --port {Port} -- parent-pid {ParentPid}",
+          Arguments = $"--team-name \"{TeamName}\" --agent-name \"{Name}\" --port {Port} --parent-pid {ParentPid}",
           UseShellExecute = false,
           CreateNoWindow = true
         }) ?? throw new InvalidOperationException($"Failed to start process '{Name}'.");

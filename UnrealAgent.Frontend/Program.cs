@@ -160,6 +160,20 @@ App.Services.GetRequiredService<ModelSettings>().Load();
     }
 }
 
+// ── 팀원 모드 : iframe 임베딩 허용
+if (App.Services.GetRequiredService<AgentSession>().Team.ParentPid is not null)
+{
+    App.Use(async (HttpContext Context, Func<Task> Next) =>
+    {
+        Context.Response.OnStarting(() =>
+        {
+            Context.Response.Headers.Remove("X-Frame-Options");
+            Context.Response.Headers["Content-Security-Policy"] = "frame-ancestors http://localhost:*";
+            return Task.CompletedTask;
+        });
+        await Next();
+    });
+}
 
 // ── 미들웨어 파이프라인 ──
 App.UseStaticFiles();

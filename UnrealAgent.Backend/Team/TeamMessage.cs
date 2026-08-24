@@ -18,4 +18,4 @@ public enum MessageType
 ///////////////////////////////////////////////////////////////////////////
 
 /// 팀원간 주고 받는 메세지
-public record TeamMessage(string From, MessageType Type, string Content, DateTime Timestapm);
+public record TeamMessage(string From, MessageType Type, string Content, DateTime Timestamp);

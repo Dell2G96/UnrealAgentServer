@@ -27,7 +27,10 @@ public partial class Chat : IAsyncDisposable
     
     // 현재 대기 중인 권한 요청
     private ChatEvent.ToolPermissionRequest? PendingPermission;
-
+    
+    // 선택된 팀원 포트 null이면 : 리더 탭
+    private int? SelectedTeammatePort;
+    
     protected override void OnInitialized()
     {
         AgentRunner.OnChatEvent = OnChatEvent;

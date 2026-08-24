@@ -241,7 +241,7 @@ public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings Model
         StringBuilder Sb = new();
         
         if (!Skip.HasFlag(Section.Identity))
-            Sb.AppendLine(Identity());
+            Sb.AppendLine(Identity(Session));
         
         if (!Skip.HasFlag(Section.System))
             Sb.AppendLine(System());
@@ -287,22 +287,41 @@ public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings Model
     
 
     // ── 시스템 프롬프트 ──
-    
+
     /// <summary>
     /// AI 어시스턴트의 역할과 핵심 규칙을 정의
     /// </summary>
-    private static string Identity() => """
-                                        You are UnrealAgent, an AI assistant that controls Unreal Editor.
+    private static string Identity(AgentSession? Session)
+    {
+        string Base = """
+                      YYou are UnrealAgent, an AI assistant that controls Unreal Editor.
 
-                                        You are an interactive agent that helps users with Unreal Engine level design,
-                                        asset management, and editor automation tasks. Use the instructions below and
-                                        the tools available to you to assist the user.
+                         You are an interactive agent that helps users with Unreal Engine level design,
+                         asset management, and editor automation tasks. Use the instructions below and
+                         the tools available to you to assist the user.
 
-                                        IMPORTANT: You must NEVER guess actor names, asset paths, or property values.
-                                        Always query the current state first.
-                                        IMPORTANT: Before deleting assets or making bulk destructive changes (100+
-                                        actors, project settings), always confirm with the user first.
-                                        """;
+                         IMPORTANT: You must NEVER guess actor names, asset paths, or property values.
+                         Always query the current state first.
+                         IMPORTANT: Before deleting assets or making bulk destructive changes (100+
+                         actors, project settings), always confirm with the user first.
+                      """;
+
+        if (Session?.Team.ParentPid is null)
+            return Base;
+        
+        return Base + $"""
+
+                           ## Team Role
+                           You are a TEAMMATE named "{Session.Team.AgentName}" in team "{Session.Team.TeamName}".
+                           You are NOT the leader. You were spawned to perform a specific task.
+                           - Focus on the task given in your first message.
+                           - Report your results back to the leader using the team tool (action: "message", recipient: "leader").
+                           - You can only use "message", "broadcast", and "status" actions in the team tool.
+                           - Do NOT create teams, spawn teammates, or shut down other teammates.
+                           """;
+
+    }
+    
     
     /// <summary>
     /// 시스템 레벨 동작 규칙을 정의
