@@ -95,6 +95,7 @@ Builder.Services.AddHostedService(Sp => Sp.GetRequiredService<AgentRunner>());
 // ── Runtime 모듈 ──
 Builder.Services.AddSingleton<PromptBuilder>();
 Builder.Services.AddSingleton<TokenTracker>();
+Builder.Services.AddSingleton<UsageTracker>();
 
 // ── Tool 모듈 ──
 Builder.Services.AddSingleton<ToolRegistry>();

@@ -1,7 +1,7 @@
 using UnrealAgent.Backend.Tool.Attributes;
 
 namespace UnrealAgent.Backend.Model.Models;
-[AgentModel(Order = 2)]
+[AgentModel(Order = 2, bIsLegacy = true)]
 public sealed class Sonnet46 : IModel
 {
     public const string ModelId = "claude-sonnet-4-6";
@@ -10,4 +10,6 @@ public sealed class Sonnet46 : IModel
     public string Description => "속도와 지능의 최적 균형을 갖춘 모델입니다.";
     public int MaxOutputTokens => 64_000;
     public int ContextWindow => 200_000;
+    public double InputPricePerMTok => 3.0;
+    public double OutputPricePerMTok => 15.0;
 }

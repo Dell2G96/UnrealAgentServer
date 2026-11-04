@@ -19,4 +19,10 @@ public interface IModel
     
     // 컨텍스트 윈도우 크기
     int ContextWindow { get; }
+    
+    // 입력 토큰 단가 (USD / 100만 토큰). /usage 비용 추정에 사용
+    double InputPricePerMTok { get; }
+    
+    // 출력 토큰 단가 (USD / 100만 토큰)
+    double OutputPricePerMTok { get; }
 }
