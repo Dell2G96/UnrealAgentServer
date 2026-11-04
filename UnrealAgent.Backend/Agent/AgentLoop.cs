@@ -3,6 +3,7 @@ using Anthropic.Models.Messages;
 using UnrealAgent.Backend.Auth;
 using UnrealAgent.Backend.Conversation;
 using UnrealAgent.Backend.Chat;
+using UnrealAgent.Backend.Model;
 using UnrealAgent.Backend.Prompt;
 using UnrealAgent.Backend.Security;
 using UnrealAgent.Backend.Token;
@@ -15,7 +16,7 @@ namespace UnrealAgent.Backend.Agent;
 /// 에이전트 루프
 /// 클로드 API 스트리믕 -> 도구 실행을 반복하며, 모든 지능은 모델에 위임
 /// </summary>
-public sealed class AgentLoop(PromptBuilder PromptBuilder, ToolExecutor ToolExecutor, AuthConfig Auth, TokenTracker TokenTracker)
+public sealed class AgentLoop(PromptBuilder PromptBuilder, ToolExecutor ToolExecutor, AuthConfig Auth, TokenTracker TokenTracker, ModelSettings ModelSettings, UsageTracker UsageTracker)
 {
     // 사용자 메세지 1건에 대한 에이전트 루프를 실행
     // 호출 1회가 MessageSpan 1개에 대응하며, 모델이 도구를 사용할 때 마다 내부에서 API 를 반복 하출한다
@@ -42,6 +43,9 @@ public sealed class AgentLoop(PromptBuilder PromptBuilder, ToolExecutor ToolExec
                     yield return Evt;
                 }
             }
+            
+            // 이번 호출의 토큰 사용량/비용을 누적 (/usage)
+            UsageTracker.Record(ModelSettings.Current, ApiStreamSpan.Usage);
             
             // 완료된 응답을 히스토리에 저장
             switch (ApiStreamSpan.Complete())

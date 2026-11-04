@@ -1,7 +1,7 @@
 using UnrealAgent.Backend.Tool.Attributes;
 
 namespace UnrealAgent.Backend.Model.Models;
-[AgentModel(Order = 0)]
+[AgentModel(Order = 0, bIsLegacy = true)]
 public class Fable5 : IModel
 {
     public const string ModelId = "claude-fable-5";
@@ -10,4 +10,6 @@ public class Fable5 : IModel
     public string Description => "존나 비쌈";
     public int MaxOutputTokens => 128_000;
     public int ContextWindow => 1_000_000;
+    public double InputPricePerMTok => 10.0;
+    public double OutputPricePerMTok => 50.0;
 }

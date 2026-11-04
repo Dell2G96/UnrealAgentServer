@@ -34,6 +34,7 @@
 using UnrealAgent.Backend.Agent;
 using UnrealAgent.Backend.Agent.Middleware;
 using UnrealAgent.Backend.Auth;
+using UnrealAgent.Backend.Chat;
 using UnrealAgent.Backend.Command;
 using UnrealAgent.Backend.Command.Commands;
 using UnrealAgent.Backend.Mcp;
@@ -88,6 +89,9 @@ Builder.Services.AddSingleton<AuthConfig>();
 Builder.Services.AddSingleton<AgentSession>();
 Builder.Services.AddSingleton<AgentLoop>();
 
+// ── 26.11.01 세션 저장/불러오기 (.unrealagent/sessions) ──
+Builder.Services.AddSingleton<UnrealAgent.Backend.Conversation.SessionStore>();
+
 // ── AgentRunner (메세지 큐 + 에이전트 루프 서비스)  ──
 Builder.Services.AddSingleton<AgentRunner>();
 Builder.Services.AddHostedService(Sp => Sp.GetRequiredService<AgentRunner>());
@@ -95,6 +99,7 @@ Builder.Services.AddHostedService(Sp => Sp.GetRequiredService<AgentRunner>());
 // ── Runtime 모듈 ──
 Builder.Services.AddSingleton<PromptBuilder>();
 Builder.Services.AddSingleton<TokenTracker>();
+Builder.Services.AddSingleton<UsageTracker>();
 
 // ── Tool 모듈 ──
 Builder.Services.AddSingleton<ToolRegistry>();
@@ -128,6 +133,18 @@ App.Services.GetRequiredService<SkillRegistry>().DiscoverSkills();
 
 // ── 팀 인자 파싱 ( 팀원 모드일 때 TeamName, AgentName, ParentPid 설정 ──
 App.Services.GetRequiredService<AgentSession>().Team.ParseArgs(args);
+
+// ── 26.11.01 리더는 마지막 세션을 자동으로 이어서 시작 (대화 + 화면 복원) ──
+{
+    AgentSession LeaderSession = App.Services.GetRequiredService<AgentSession>();
+    UnrealAgent.Backend.Conversation.SessionStore Sessions = App.Services.GetRequiredService<UnrealAgent.Backend.Conversation.SessionStore>();
+
+    if (LeaderSession.Team.ParentPid is null && Sessions.LoadLatest(LeaderSession.Conversation))
+    {
+        App.Services.GetRequiredService<AgentRunner>().Store.Process(
+            new ChatEvent.Restore(UnrealAgent.Backend.Conversation.SessionStore.BuildUIMessages(LeaderSession.Conversation)));
+    }
+}
 
 // ── Auth 설정 로드 ──
 App.Services.GetRequiredService<AuthConfig>().Load();

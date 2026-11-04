@@ -149,6 +149,13 @@ public sealed class Conversation
         return new MessageParam { Role = Role.User, Content = ResultBlocks };
     }
     
+    // 저장된 세션의 MessageSpan 목록으로 대화 내역을 통째로 교체한다 (/resume, 시작 시 복원)
+    public void Restore(IEnumerable<MessageSpan> Spans)
+    {
+        MessageSpans.Clear();
+        MessageSpans.AddRange(Spans);
+    }
+
     // 대화 내역 초기화
     public void Clear()
     {

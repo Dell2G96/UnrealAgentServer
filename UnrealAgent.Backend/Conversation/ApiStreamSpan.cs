@@ -1,6 +1,7 @@
 using System.Text;
 using Anthropic.Models.Messages;
 using UnrealAgent.Backend.Chat;
+using UnrealAgent.Backend.Token;
 using Block = UnrealAgent.Backend.Core.Block;
 // using Microsoft.Extensions.Hosting;
 // using OpenAI.Assistants;
@@ -71,6 +72,10 @@ public sealed class ApiStreamSpan
     // 컨텍스트 윈도우 사용량을 나타낸다
     private long InputTokens;
     
+    // 비용 계산용 토큰 사용량 (일반 입력 / 캐시 쓰기 / 캐시 읽기 / 출력)
+    // 출력 토큰은 메시지 델타 이벤트에서 최종값이 도착한다
+    public ApiCallUsage Usage { get; private set; } = new(0, 0, 0, 0);
+    
     
     
     ///////////////////////////////////////////////////////////////////////////
@@ -111,6 +116,7 @@ public sealed class ApiStreamSpan
     {
         Usage Usg = StartMsgEvt.Message.Usage;
         InputTokens = Usg.InputTokens + (Usg.CacheReadInputTokens ?? 0) + (Usg.CacheCreationInputTokens ?? 0);
+        Usage = ApiCallUsage.From(Usg);
         
         return null;
     }
@@ -121,6 +127,9 @@ public sealed class ApiStreamSpan
     {
         if (MsgDelta.Delta.StopReason is { } Reason)
             FinalStopReason = Reason;
+
+        // 출력 토큰 수는 누적값이므로 덮어쓴다
+        Usage = Usage with { OutputTokens = MsgDelta.Usage.OutputTokens };
 
         return null;
     }

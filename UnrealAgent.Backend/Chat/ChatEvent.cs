@@ -33,6 +33,9 @@ public abstract record ChatEvent
     
     // 커맨드 메세지
     public sealed record Command(string Name, string Argument) : ChatEvent;
+
+    // 저장된 세션을 불러왔을 때 화면 메시지 목록을 통째로 교체 (/resume)
+    public sealed record Restore(IReadOnlyList<ChatUIMessage> Messages) : ChatEvent;
     
     // 스트림 종료
     public sealed record Done : ChatEvent;

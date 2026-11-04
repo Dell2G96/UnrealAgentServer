@@ -113,7 +113,14 @@ public sealed class ChatStore
 
                 break;
             }
-            
+
+            case ChatEvent.Restore { Messages: var Restored }:
+            {
+                Messages.Clear();
+                Messages.AddRange(Restored);
+                break;
+            }
+
             case ChatEvent.Done:
             {
                 ThinkingComplete();

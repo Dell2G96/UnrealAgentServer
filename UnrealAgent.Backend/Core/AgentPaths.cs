@@ -21,6 +21,9 @@ public static class AgentPaths
     // 스킬 디렉터리 경로 
     // ({ConfigDir}/skills)
     public static string SkillsDir => Path.Combine(ConfigDir, "skills");
+
+    // 대화 세션 저장 디렉터리 경로 ({ConfigDir}/sessions)
+    public static string SessionsDir => Path.Combine(ConfigDir, "sessions");
     
     ///////////////////////////////////////////////////////////////////////////
     /// 팀 경로

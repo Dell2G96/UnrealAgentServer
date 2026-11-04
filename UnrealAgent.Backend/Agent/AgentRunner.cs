@@ -12,7 +12,7 @@ namespace UnrealAgent.Backend.Agent;
 /// 리더와 팀원 모두 동일한 서비스를 사용
 /// Store 수정은 직접하지 않고 OnChatEvent을 통해 UI 스레드에서 실행
 /// </summary>
-public sealed class AgentRunner(AgentSession Session, IHostApplicationLifetime Lifetime) : BackgroundService
+public sealed class AgentRunner(AgentSession Session, IHostApplicationLifetime Lifetime, SessionStore SessionStore) : BackgroundService
 {
     // 반응형 상태 관리자
     public ChatStore Store { get; } = new();
@@ -74,6 +74,25 @@ public sealed class AgentRunner(AgentSession Session, IHostApplicationLifetime L
             {
                 await DispatchEventAsync(new ChatEvent.System(e.Message));
             }
+
+            await SaveSessionAsync();
+        }
+    }
+
+    // 턴이 끝날 때마다 리더 대화를 세션 파일로 저장한다 (서버가 강제 종료돼도 남도록)
+    // 팀원(ParentPid 있음)은 저장하지 않는다
+    private async Task SaveSessionAsync()
+    {
+        if (Session.Team.ParentPid is not null)
+            return;
+
+        try
+        {
+            SessionStore.Save(Session.Conversation);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            await DispatchEventAsync(new ChatEvent.System($"세션 저장 실패: {e.Message}"));
         }
     }
 
