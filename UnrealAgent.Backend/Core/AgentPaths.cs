@@ -1,3 +1,6 @@
+using System.Security.Cryptography;
+using System.Text;
+
 namespace UnrealAgent.Backend.Core;
 
 // 프로젝트 경로를 제공하는 정적 클래스
@@ -22,8 +25,18 @@ public static class AgentPaths
     // ({ConfigDir}/skills)
     public static string SkillsDir => Path.Combine(ConfigDir, "skills");
 
-    // 대화 세션 저장 디렉터리 경로 ({ConfigDir}/sessions)
-    public static string SessionsDir => Path.Combine(ConfigDir, "sessions");
+    // 대화 세션 저장 디렉터리 경로.
+    // 대화 내용(민감한 정보 포함 가능)이 UE 프로젝트 트리 안에 남아 git/zip 공유 시
+    // 함께 유출되지 않도록, 프로젝트 폴더가 아니라 사용자 설정 폴더 아래에 저장한다
+    // ({UserConfigDir}/sessions/{프로젝트 경로 해시})
+    public static string SessionsDir => Path.Combine(UserConfigDir, "sessions", ProjectKey);
+
+    // RootPath를 식별하는 짧은 해시. 같은 사용자 설정 폴더 아래에서 UE 프로젝트별로
+    // 세션 저장 위치를 분리하기 위함 (RootPath가 없으면 "default" 폴더를 쓴다)
+    private static string ProjectKey =>
+        string.IsNullOrEmpty(RootPath)
+            ? "default"
+            : Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(RootPath)))[..16];
     
     ///////////////////////////////////////////////////////////////////////////
     /// 팀 경로

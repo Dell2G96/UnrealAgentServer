@@ -6,7 +6,7 @@ using UnrealAgent.Backend.Core;
 namespace UnrealAgent.Backend.Conversation;
 
 /// <summary>
-/// 리더 대화를 {프로젝트}/.unrealagent/sessions/{Id}.json 에 저장하고 불러온다.
+/// 리더 대화를 {AgentPaths.SessionsDir}/{Id}.json (사용자 설정 폴더 하위)에 저장하고 불러온다.
 /// 서버는 에디터와 함께 강제 종료되므로 종료 시점이 아니라 매 턴이 끝날 때마다 저장한다.
 /// </summary>
 public sealed class SessionStore
@@ -78,7 +78,9 @@ public sealed class SessionStore
             if (!IsValidId(Id))
                 continue;
 
-            if (ReadFile(FilePath) is { } Saved)
+            // UpdatedAt이 미래 시각이면 조작되었거나 신뢰할 수 없는 파일로 보고 건너뛴다
+            // (서버 시작 시 자동 복원되므로, 조작된 파일이 가짜 대화를 주입하는 것을 막기 위함)
+            if (ReadFile(FilePath) is { } Saved && Saved.UpdatedAt <= DateTime.Now)
                 Result.Add(new SessionInfo(Id, Saved.Title, Saved.UpdatedAt, Saved.Spans.Count));
         }
 
