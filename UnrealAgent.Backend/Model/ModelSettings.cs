@@ -20,7 +20,7 @@ public sealed class ModelSettings(ModelRegistry Registry)
     private static readonly JsonSerializerOptions JsonOptions = new() {WriteIndented = true};
 
     // 현재 선택된 모델 정의
-    private IModel CurrentModel = new Models.Opus48();
+    private IModel CurrentModel = new Models.Opus55();
 
     // 확장된 사고 활성화 여부 백킹 필드
     private bool ThinkingEnabled = true;
@@ -28,7 +28,10 @@ public sealed class ModelSettings(ModelRegistry Registry)
     // 사고 싶이 백킹필드
     private Effort CurrentEffort = Effort.High;
 
-    // API 모델 ID 
+    // 현재 선택된 모델 정의 (단가 등 모델 정보가 필요할 때 사용)
+    public IModel Current => CurrentModel;
+
+    // API 모델 ID
     public string Model => CurrentModel.Id;
 
     // UI 표시 이름
@@ -44,7 +47,17 @@ public sealed class ModelSettings(ModelRegistry Registry)
     public int ContextWindow => CurrentModel.ContextWindow;
 
     // 현재 설정에 맞는 ThinkingConfigParam를 반환
-    public ThinkingConfigParam GetThinking() => bThinkingEnabled? new ThinkingConfigAdaptive() : new ThinkingConfigDisabled();
+    // 토글이 꺼져 있어도 thinking 을 끌 수 없는 모델이면 adaptive 로 보낸다 (끄면 API 가 400 오류)
+    public ThinkingConfigParam GetThinking() => bThinkingEnabled || !CanDisableThinking() ? new ThinkingConfigAdaptive() : new ThinkingConfigDisabled();
+
+    // 현재 모델 + Effort 조합에서 thinking 을 끌 수 있는지
+    // Opus 5.5 / Sonnet 5.5 / Fable 5.1 은 항상 불가, Haiku 5.5 는 Effort 가 High 이하일 때만 가능
+    private bool CanDisableThinking() => Model switch
+    {
+        Models.Opus55.ModelId or Models.Sonnet55.ModelId or Models.Fable51.ModelId => false,
+        Models.Haiku55.ModelId => Effort is Effort.Low or Effort.Medium or Effort.High,
+        _ => true
+    };
 
     
     // 현재 설정에 맞는 Effort의 OutputCOnfig를 반환

@@ -6,6 +6,7 @@ using UnrealAgent.Backend.Auth;
 using UnrealAgent.Backend.Tool.Attributes;
 using ReverseMarkdown;
 using UnrealAgent.Backend.Agent;
+using UnrealAgent.Backend.Model.Models;
 
 namespace UnrealAgent.Backend.Tool.Tools;
 
@@ -345,10 +346,12 @@ public class WebFetch(AuthConfig Auth, IHttpClientFactory HttpClientFactory) : A
 
         try
         {
-            // 6. Haiku 4.5 서브 호출로 요약 생성
+            // 6. Haiku 5.5 서브 호출로 요약 생성
             Message Response = await Auth.Client!.Messages.Create(new MessageCreateParams
             {
-                Model = "claude-haiku-4-5-20251001",
+                Model = Haiku55.ModelId,
+                // Haiku 5.5 는 thinking 을 안 보내면 기본으로 켜져서 작은 MaxTokens 를 사고에 다 써버릴 수 있다. 단순 보조 호출이라 끈다
+                Thinking = new ThinkingConfigDisabled(),
                 MaxTokens = SummaryMaxTokens,
                 System = new List<TextBlockParam>(),
                 Messages =

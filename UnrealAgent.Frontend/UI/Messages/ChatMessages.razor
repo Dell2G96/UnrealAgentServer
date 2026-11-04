@@ -1,5 +1,11 @@
+@inherits JsComponentBase
+
+<!-- 스크롤 영역 + ↓ 버튼을 겹쳐 놓기 위한 바깥 틀 (버튼이 스크롤에 같이 밀려 올라가지 않도록) -->
+<div class="flex-1 min-h-0 relative flex flex-col">
+
 <!-- 대화방 배경 : 카카오톡 클래식 하늘색 -->
-<div class="flex-1 overflow-y-auto px-4 md:px-8 lg:px-12 py-6 flex flex-col gap-3 scroll-smooth bg-kk-bg relative kk-scroll" id="messages-container">
+<!-- 자동 스크롤은 JS 가 scrollTop 을 직접 바꾸므로 scroll-smooth 는 쓰지 않는다 -->
+<div @ref="Container" class="flex-1 overflow-y-auto px-4 md:px-8 lg:px-12 py-6 flex flex-col gap-3 bg-kk-bg relative kk-scroll" id="messages-container">
 
     <!-- 채팅 메세지 -->
     @if (Messages.Count == 0)
@@ -33,4 +39,12 @@
     }
     
     <div id="messages-bottom"></div>
+</div>
+
+<!-- 바닥으로 이동 버튼 : 사용자가 위로 스크롤해 자동 스크롤이 꺼졌을 때만 보인다 (표시/숨김은 JS 가 담당) -->
+<button @ref="BottomButton" type="button" title="맨 아래로"
+        class="hidden absolute bottom-4 right-6 z-20 size-10 rounded-full bg-kk-bar text-kk-icon shadow-md hover:bg-kk-chip-hover flex items-center justify-center">
+    <span class="material-symbols-outlined">arrow_downward</span>
+</button>
+
 </div>
