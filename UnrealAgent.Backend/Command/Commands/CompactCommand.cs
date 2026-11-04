@@ -6,11 +6,12 @@ using UnrealAgent.Backend.Auth;
 using UnrealAgent.Backend.Chat;
 using UnrealAgent.Backend.Command.Attributes;
 using UnrealAgent.Backend.Model.Models;
+using UnrealAgent.Backend.Token;
 
 namespace UnrealAgent.Backend.Command.Commands;
 
 [AgentCommand("/compact", "컨텍스트를 요약하여 압축한다. 지시사항을 추가할 수 있다", icon : "compress")]
-public partial class CompactCommand(AuthConfig Auth) : IAgentCommand
+public partial class CompactCommand(AuthConfig Auth, UsageTracker UsageTracker) : IAgentCommand
 {
     [GeneratedRegex("<summary>(.*?)</summary>", RegexOptions.Singleline)]
     private static partial Regex SummaryTagRegex();
@@ -53,10 +54,10 @@ public partial class CompactCommand(AuthConfig Auth) : IAgentCommand
             Content = SummaryPrompt + Suffix
         });
         
-        // Opus 에게 요약 요청
+        // Opus 5.5 에게 요약 요청
         Message Respone = await Auth.Client.Messages.Create(new MessageCreateParams
         {
-            Model = Opus48.ModelId,
+            Model = Opus55.ModelId,
             MaxTokens = 40000,
             System = new List<TextBlockParam>
             {
@@ -69,6 +70,9 @@ public partial class CompactCommand(AuthConfig Auth) : IAgentCommand
                 Effort = Effort.High
             }
         });
+        
+        // 요약 호출의 토큰 사용량/비용도 누적 (/usage)
+        UsageTracker.Record(new Opus55(), ApiCallUsage.From(Respone.Usage));
         
         // 결과 텍스트를 가져온다
         string ResponeText = ExtractText(Respone.Content);
